@@ -1,0 +1,187 @@
+/**
+ * calendar.css
+ * Todo lo que vive dentro de #exportArea: título + caja de curso/semestre,
+ * la rejilla del calendario y la leyenda. Esta es la parte que imita al
+ * milímetro el horario oficial de la ESI (medido con cuentagotas de píxel
+ * sobre el PDF real): tipografía Arial, negro/blanco + los dos tonos exactos
+ * de teal del original, esquinas rectas, sin sombras, filas de altura
+ * automática y huecos discontinuos solo cuando hay solape real.
+ *
+ * Depende de las variables de color definidas en :root en base.css
+ * (--teal, --teal-dark, --dashed, --muted...), así que base.css debe
+ * cargarse también.
+ */
+
+#exportArea {
+  background: #fff;
+  padding: 18px 6px 30px;
+}
+
+/* ---------- Cabecera: título + caja Año académico/Curso/Semestre/Grupo ---------- */
+.meta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 0 14px;
+}
+.meta-title {
+  border-left: 4px solid var(--teal);
+  padding-left: 12px;
+}
+.meta-title input {
+  border: none;
+  border-bottom: 3px solid var(--teal);
+  font-family: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--teal-dark);
+  padding: 2px 0;
+  background: transparent;
+  min-width: 280px;
+}
+.meta-box {
+  border: 1px solid var(--teal);
+  border-radius: 0;
+  font-size: 11.5px;
+}
+.meta-box table {
+  border-collapse: collapse;
+}
+.meta-box th,
+.meta-box td {
+  border: 1px solid var(--teal);
+  padding: 5px 12px;
+  text-align: center;
+}
+.meta-box th {
+  background: #fff;
+  color: var(--teal-dark);
+  font-weight: 700;
+}
+.meta-box input {
+  border: none;
+  text-align: center;
+  font-family: inherit;
+  font-size: 12px;
+  width: 90px;
+  padding: 2px;
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .meta-header {
+    flex-direction: column;
+  }
+}
+
+/* ---------- Calendario ---------- */
+.cal-wrap {
+  margin-top: 16px;
+  border: 1px solid #000;
+  background: #fff;
+}
+.cal-scroll {
+  overflow-x: auto;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  min-width: 1150px;
+  align-items: stretch;
+}
+.cal-daylabel {
+  text-align: center;
+  font-weight: 700;
+  color: #000;
+  font-size: 15px;
+  padding: 9px 4px;
+  border-bottom: 1px solid #000;
+  border-left: 1px solid #000;
+  background: #fff;
+}
+.cal-daylabel:first-child {
+  border-left: none;
+}
+.cal-daycol {
+  border-left: 1px solid #000;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+.cal-daycol:first-child {
+  border-left: none;
+}
+
+/* Cada franja horaria es una fila que crece con su propio contenido — como en
+   el horario real, donde la altura de cada celda depende de lo que contiene
+   y no de un reloj proporcional. */
+.cluster-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px dashed var(--dashed);
+}
+
+.session-box {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 11px 12px;
+  cursor: pointer;
+  line-height: 1.35;
+}
+.session-box + .session-box {
+  border-left: 1px solid rgba(0, 0, 0, 0.18);
+}
+.session-box .sb-time {
+  color: #000;
+  font-size: 13px;
+  font-weight: 400;
+}
+.session-box .sb-siglas {
+  font-weight: 700;
+  text-align: center;
+  font-size: 19px;
+  margin: 4px 0 6px;
+  letter-spacing: 0.2px;
+}
+.sb-grupo {
+  border: 1.5px solid var(--teal);
+  border-radius: 3px;
+  background: #fff;
+  padding: 3px 8px;
+  font-size: 13.5px;
+  text-align: center;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: #0c4d4d;
+}
+.sb-weeks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-size: 11px;
+  margin-bottom: 9px;
+  color: #111;
+}
+.sb-weeks span.off {
+  color: #c3c8ca;
+}
+
+.empty-note {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 40px 20px;
+}
+
+/* ---------- Leyenda: texto plano coloreado, igual que el original — sin caja ---------- */
+.legend {
+  margin-top: 14px;
+  padding: 4px 14px 0;
+}
+.legend-item {
+  font-size: 12.5px;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
