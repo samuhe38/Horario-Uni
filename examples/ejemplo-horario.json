@@ -1,0 +1,27 @@
+{
+  "titulo": "Grado en Ingeniería Informática",
+  "curso": "1º", "semestre": "1º", "grupo": "1ºA", "anioAcademico": "2026-2027",
+  "subjects": [
+    { "id": "md",   "siglas": "MD",   "nombre": "Matemática Discreta", "codigo": "21714010", "color": "#984EA3" },
+    { "id": "cal",  "siglas": "CAL",  "nombre": "Cálculo", "codigo": "21714009", "color": "#E41C1E" },
+    { "id": "ig",   "siglas": "IG",   "nombre": "Informática General", "codigo": "21714005", "color": "#3A80B9" },
+    { "id": "ip",   "siglas": "IP",   "nombre": "Introducción a la Programación", "codigo": "21714006", "color": "#4FB04C" },
+    { "id": "sdig", "siglas": "SDIG", "nombre": "Sistemas Digitales", "codigo": "21714084", "color": "#FF7F00" }
+  ],
+  "sessions": [
+    { "subjectId":"md","day":0,"start":"08:30","end":"10:00","room":"Aula D01",
+      "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false]}]},
+    { "subjectId":"cal","day":0,"start":"10:00","end":"11:30","room":"Aula D01",
+      "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false]}]},
+    { "subjectId":"ig","day":0,"start":"11:30","end":"13:00","room":"Aula C01",
+      "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]}]},
+    { "subjectId":"ip","day":0,"start":"13:00","end":"14:30","room":"Aula C01",
+      "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false]}]},
+    { "subjectId":"ig","day":1,"start":"12:00","end":"13:30","room":"Aula C01",
+      "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]}]},
+    { "subjectId":"ip","day":1,"start":"12:00","end":"13:30","room":"Aula B01",
+      "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]}]},
+    { "subjectId":"sdig","day":2,"start":"11:30","end":"13:00","room":"Aula B04",
+      "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]}]}
+  ]
+}
