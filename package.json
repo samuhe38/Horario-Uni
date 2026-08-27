@@ -1,0 +1,20 @@
+{
+  "name": "horario-esi",
+  "version": "1.0.0",
+  "description": "Editor de horarios académicos que reproduce el diseño visual de los horarios oficiales de la Escuela Superior de Ingeniería (ESI), Universidad de Cádiz — campus de Puerto Real.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve ."
+  },
+  "keywords": [
+    "horario",
+    "esi",
+    "uca",
+    "universidad-de-cadiz",
+    "calendario",
+    "puerto-real",
+    "ingenieria-informatica"
+  ],
+  "license": "MIT"
+}

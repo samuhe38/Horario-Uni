@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Horario · Estilo ESI UCA</title>
+<meta name="description" content="Editor de horarios académicos que reproduce el diseño visual de los horarios oficiales de la Escuela Superior de Ingeniería (ESI), Universidad de Cádiz.">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/calendar.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="mark">ESI</div>
+    <div>
+      <h1>Mi Horario</h1>
+      <small>Editor visual estilo Escuela Superior de Ingeniería · UCA</small>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span class="status-pill" id="statusPill"><span class="dot"></span> Guardado</span>
+    <button id="btnPNG" class="small" type="button">🖼 Descargar imagen (.png)</button>
+    <button id="btnExport" class="small" type="button">⬇ Exportar .json</button>
+    <label class="btn small" style="margin:0;">
+      ⬆ Importar .json
+      <input type="file" id="fileImport" accept="application/json" style="display:none;">
+    </label>
+    <button id="btnReset" class="small ghost-danger" type="button">Vaciar horario</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="manual" type="button">1 · Constructor manual</button>
+  <button class="tab-btn" data-tab="import" type="button">2 · Importar (desde PDF vía chat)</button>
+</div>
+
+<div class="shell">
+
+  <!-- ===================== PESTAÑA 1: CONSTRUCTOR MANUAL ===================== -->
+  <div class="tab-panel active" id="panel-manual">
+
+    <!-- Asignaturas -->
+    <div class="card">
+      <h2>Asignaturas</h2>
+      <p class="hint">Crea cada asignatura con sus siglas, nombre completo, código oficial (el que aparece en la guía docente, ej. 21714009) y color. Este color se usará para todas sus sesiones, igual que en la leyenda de los horarios de la ESI.</p>
+      <div class="grid-form">
+        <div class="field">
+          <label for="subSiglas">Siglas</label>
+          <input type="text" id="subSiglas" placeholder="Ej: CAL">
+        </div>
+        <div class="field" style="grid-column:span 2;">
+          <label for="subNombre">Nombre completo</label>
+          <input type="text" id="subNombre" placeholder="Ej: Cálculo">
+        </div>
+        <div class="field">
+          <label for="subCodigo">Código</label>
+          <input type="text" id="subCodigo" placeholder="Ej: 21714009">
+        </div>
+        <div class="field">
+          <label for="subColor">Color</label>
+          <input type="color" id="subColor" value="#e41c1e">
+        </div>
+        <div class="field row-end">
+          <button class="primary" id="btnAddSubject" type="button" style="width:100%;">+ Añadir asignatura</button>
+        </div>
+      </div>
+      <div class="chip-list" id="subjectChips"></div>
+    </div>
+
+    <!-- Sesiones -->
+    <div class="card">
+      <h2>Sesiones del horario</h2>
+      <p class="hint">Una sesión es un hueco día + hora + aula para una asignatura. Dentro de una misma sesión puedes añadir varios grupos (teoría, problemas, prácticas...) que se imparten juntos, tal cual aparece en los horarios oficiales. Si dos sesiones se solapan en el tiempo, el editor las coloca automáticamente en columnas contiguas más estrechas dentro del mismo día; si una sesión va sola, ocupa todo el ancho.</p>
+
+      <div class="grid-form">
+        <div class="field">
+          <label for="sesSubject">Asignatura</label>
+          <select id="sesSubject"></select>
+        </div>
+        <div class="field">
+          <label for="sesDay">Día</label>
+          <select id="sesDay">
+            <option value="0">Lunes</option>
+            <option value="1">Martes</option>
+            <option value="2">Miércoles</option>
+            <option value="3">Jueves</option>
+            <option value="4">Viernes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sesStart">Hora inicio</label>
+          <input type="time" id="sesStart" value="08:30">
+        </div>
+        <div class="field">
+          <label for="sesEnd">Hora fin</label>
+          <input type="time" id="sesEnd" value="10:00">
+        </div>
+        <div class="field">
+          <label for="sesRoom">Aula</label>
+          <input type="text" id="sesRoom" placeholder="Ej: Aula D01">
+        </div>
+      </div>
+
+      <div class="grupo-box">
+        <label style="margin-bottom:8px;">Grupos que se imparten en esta sesión</label>
+        <div class="grid-form">
+          <div class="field">
+            <label for="grpCode">Código de grupo</label>
+            <input type="text" id="grpCode" placeholder="Ej: A1">
+          </div>
+          <div class="field" style="grid-column:span 2;">
+            <label for="grpTipo">Tipo</label>
+            <select id="grpTipo">
+              <option>Clases de teoría</option>
+              <option>Clases de problemas</option>
+              <option>Prácticas informáticas</option>
+              <option>Prácticas de laboratorio</option>
+              <option>Clases teórico-prácticas</option>
+              <option value="__custom">Otro (escribir)...</option>
+            </select>
+          </div>
+          <div class="field" id="grpTipoCustomWrap" style="display:none;">
+            <label for="grpTipoCustom">Tipo personalizado</label>
+            <input type="text" id="grpTipoCustom" placeholder="Ej: Seminario">
+          </div>
+          <div class="field">
+            <label for="grpWeeksTotal">Semanas totales</label>
+            <input type="number" id="grpWeeksTotal" value="16" min="1" max="20">
+          </div>
+        </div>
+
+        <label style="margin-top:12px;">Semanas activas (clic para marcar/desmarcar; oscuro = hay clase, gris = no hay clase)</label>
+        <div class="week-toggle-grid" id="weekToggleGrid"></div>
+        <div class="week-quick">
+          <input type="text" id="weekQuickOff" placeholder="Semanas sin clase, ej: 1,7,14">
+          <button class="small" id="btnApplyQuick" type="button">Aplicar</button>
+          <button class="small" id="btnAllOn" type="button">Todas activas</button>
+          <button class="small" id="btnAllOff" type="button">Todas inactivas</button>
+        </div>
+
+        <div class="actions-row">
+          <button class="primary" id="btnAddGrupo" type="button">+ Añadir grupo a esta sesión</button>
+        </div>
+
+        <div class="grupo-mini-list" id="grupoMiniList"></div>
+      </div>
+
+      <div class="actions-row">
+        <button class="primary" id="btnSaveSession" type="button" style="flex:1;">Guardar sesión</button>
+        <button id="btnCancelEditSession" type="button" style="display:none;">Cancelar edición</button>
+      </div>
+
+      <div class="session-list" id="sessionList"></div>
+    </div>
+
+  </div>
+
+  <!-- ===================== PESTAÑA 2: IMPORTAR ===================== -->
+  <div class="tab-panel" id="panel-import">
+    <div class="card">
+      <h2>Importar tu horario generado desde el PDF de la ESI</h2>
+      <p class="hint">
+        Cómo funciona: sube el PDF de tu horario oficial a un chat con un asistente de IA y dile qué
+        asignatura(s) y qué grupo(s) tienes en cada una (por ejemplo: "estoy en CAL grupo A1 y B3, IG grupo
+        A1 y C5..."). Pídele que extraiga los horarios, aulas, códigos y semanas activas de tus grupos y que
+        te devuelva un bloque de datos en formato JSON con este esquema. Pégalo abajo y pulsa «Cargar
+        horario» para verlo dibujado automáticamente con los mismos colores y estructura que el resto de la
+        herramienta.
+      </p>
+      <pre class="schema">{
+  "titulo": "Grado en Ingeniería Informática",
+  "curso": "1º", "semestre": "1º", "grupo": "1ºA", "anioAcademico": "2026-2027",
+  "subjects": [
+    { "id": "cal", "siglas": "CAL", "nombre": "Cálculo", "codigo": "21714009", "color": "#e41c1e" }
+  ],
+  "sessions": [
+    {
+      "subjectId": "cal", "day": 0, "start": "08:30", "end": "10:00", "room": "Aula D01",
+      "grupos": [
+        { "code": "A1", "tipo": "Clases de teoría", "weeksTotal": 16, "weeksActive": [true,true,true,false,...] }
+      ]
+    }
+  ]
+}</pre>
+      <label for="importText" style="margin-top:10px;">Pega aquí el JSON</label>
+      <textarea id="importText" placeholder="Pega aquí el bloque JSON..."></textarea>
+      <div class="actions-row">
+        <button class="primary" id="btnImportPaste" type="button">Cargar horario</button>
+        <label class="btn" style="margin:0;">
+          ⬆ O cargar un archivo .json
+          <input type="file" id="fileImport2" accept="application/json" style="display:none;">
+        </label>
+      </div>
+      <p class="hint" style="margin-top:14px;">
+        Importar reemplaza por completo las asignaturas y sesiones actuales. Si quieres conservar lo que
+        tienes, exporta primero tu horario actual con el botón «Exportar .json» de la barra superior.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===================== ZONA EXPORTABLE: título + meta + calendario + leyenda ===================== -->
+  <div id="exportArea">
+    <div class="meta-header">
+      <div class="meta-title">
+        <input type="text" id="metaTitulo" value="Grado en Ingeniería Informática" aria-label="Título del horario">
+      </div>
+      <div class="meta-box">
+        <table>
+          <tr><th>Año académico</th><td><input type="text" id="metaAnio" value="2026-2027"></td></tr>
+          <tr><th>Curso</th><td><input type="text" id="metaCurso" value="1º"></td></tr>
+          <tr><th>Semestre</th><td><input type="text" id="metaSemestre" value="1º"></td></tr>
+          <tr><th>Grupo</th><td><input type="text" id="metaGrupo" value="1ºA"></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="cal-wrap">
+      <div class="cal-scroll">
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+    <div id="emptyNote" class="empty-note" style="display:none;">
+      Aún no has añadido ninguna sesión. Crea tus asignaturas y sesiones arriba, o importa tu horario en la pestaña 2.
+    </div>
+
+    <div class="legend" id="legendBox"></div>
+  </div>
+
+</div>
+
+<!-- Modal de detalle de sesión -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalSiglas"></h3>
+    <div class="modal-sub" id="modalNombre"></div>
+    <dl id="modalBody"></dl>
+    <button class="modal-close primary" id="modalCloseBtn" type="button">Cerrar</button>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

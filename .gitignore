@@ -1,0 +1,16 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Por si en el futuro se añade tooling con dependencias npm
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
