@@ -9,6 +9,13 @@ Construye tu horario a mano (asignaturas, grupos, aulas, semanas activas...)
 o impórtalo a partir de los datos de tu PDF oficial, y descárgalo como imagen
 PNG lista para compartir o imprimir.
 
+### 🔗 Ver en vivo
+
+**[https://samuhe38.github.io/Horario-Uni/](https://samuhe38.github.io/Horario-Uni/)**
+
+Publicado con GitHub Pages — no hace falta instalar nada, ábrelo directamente
+en el navegador.
+
 ## ✨ Características
 
 - **Constructor manual completo** — asignaturas con siglas, nombre completo,
@@ -33,15 +40,19 @@ PNG lista para compartir o imprimir.
 
 ## 🚀 Cómo usarlo
 
-Es un proyecto HTML/CSS/JS puro (módulos ES nativos del navegador, sin build
-ni dependencias de npm), pero los navegadores bloquean `import`/`export`
-cuando el archivo se abre directamente como `file://`. Necesitas servirlo con
-cualquier servidor estático — no hace falta nada complicado:
+La forma más rápida es abrir directamente la [versión publicada en GitHub
+Pages](https://samuhe38.github.io/Horario-Uni/) — no requiere instalar nada.
+
+Si prefieres tenerlo en local para modificarlo, es un proyecto HTML/CSS/JS
+puro (módulos ES nativos del navegador, sin build ni dependencias de npm),
+pero los navegadores bloquean `import`/`export` cuando el archivo se abre
+directamente como `file://`. Necesitas servirlo con cualquier servidor
+estático — no hace falta nada complicado:
 
 **Opción A — Python** (ya viene instalado en la mayoría de sistemas)
 ```bash
-git clone https://github.com/tu-usuario/horario-esi.git
-cd horario-esi
+git clone https://github.com/samuhe38/Horario-Uni.git
+cd Horario-Uni
 python3 -m http.server 8000
 ```
 Abre `http://localhost:8000` en el navegador.
@@ -52,8 +63,9 @@ npm start
 ```
 
 **Opción C — GitHub Pages**
-En `Settings → Pages`, selecciona la rama `main` y la carpeta raíz. Tu
-horario quedará publicado en `https://tu-usuario.github.io/horario-esi/`.
+Ya está publicado en [samuhe38.github.io/Horario-Uni](https://samuhe38.github.io/Horario-Uni/)
+(`Settings → Pages`, rama `main`, carpeta raíz). Cualquier cambio que se
+suba a `main` se refleja ahí automáticamente al cabo de un minuto o dos.
 
 **Opción D — VS Code**
 Extensión "Live Server" → clic derecho sobre `index.html` → *Open with Live
