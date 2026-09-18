@@ -1,19 +1,17 @@
 /**
  * calendar.css
- * Todo lo que vive dentro de #exportArea: título + caja de curso/semestre,
- * la rejilla del calendario y la leyenda. Esta es la parte que imita el
- * horario oficial de la ESI (colores medidos con cuentagotas de píxel sobre
- * el PDF real): tipografía Arial, negro/blanco + los dos tonos exactos de
- * teal del original, esquinas rectas y sin sombras.
+ * Aspecto visual de #exportArea: título + caja de curso/semestre, la rejilla
+ * del calendario y la leyenda. Imita el horario oficial de la ESI (colores
+ * medidos con cuentagotas de píxel sobre el PDF real): tipografía Arial,
+ * negro/blanco + los dos tonos exactos de teal del original, esquinas rectas
+ * y sin sombras.
  *
- * El calendario es una fila flex de columnas (horas + 5 días). Cada columna
- * contiene su propia cabecera y su propio cuerpo, así que nada se puede
- * desalinear. El eje vertical es una rejilla temporal real: una línea cada
- * 30 minutos de 08:30 a 20:30, con las clases posicionadas encima.
+ * Reparto de responsabilidades: la ESTRUCTURA del calendario (display:flex,
+ * position:relative, alturas y anchos de columna) la aplica calendar.js en
+ * línea, para que el horario se maquete bien incluso si el navegador sirve
+ * una versión antigua de esta hoja desde la caché. Aquí queda el aspecto.
  *
- * Depende de las variables de color definidas en :root en base.css
- * (--teal, --teal-dark, --dashed, --muted...), así que base.css debe
- * cargarse también.
+ * Depende de las variables de color definidas en :root en base.css.
  */
 
 #exportArea {
@@ -80,7 +78,7 @@
   }
 }
 
-/* ---------- Estructura del calendario ---------- */
+/* ---------- Contenedor del calendario ---------- */
 .cal-wrap {
   margin-top: 16px;
   border: 1px solid #000;
@@ -88,42 +86,28 @@
 }
 .cal-scroll {
   overflow-x: auto;
+  overflow-y: visible;
 }
-
-/* Fila de columnas. Cada columna es autocontenida (cabecera + cuerpo). */
+/* display:flex lo aplica también calendar.js (ver nota de arriba). */
 .cal-grid {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
 }
-
 .cal-col {
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
 }
-
-/* Columna de horas: ancho fijo, no crece. */
 .cal-timecol {
-  flex: 0 0 68px;
-  width: 68px;
   background: #fff;
 }
-
-/* Columnas de día: flex-grow y min-width los fija calendar.js según cuántas
-   clases simultáneas tenga ese día (así el día se ensancha en vez de
-   encogerse las cajas). */
 .cal-daycol {
-  flex-basis: 0;
   border-left: 1px solid #000;
   background: #fff;
 }
 
-/* Cabecera de columna: misma altura en todas, por eso quedan alineadas. */
+/* Cabecera de columna: el nombre del día. */
 .cal-colhead {
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   text-align: center;
   font-weight: 700;
   color: #000;
@@ -132,17 +116,12 @@
   background: #fff;
 }
 
-/* Cuerpo de columna: lienzo donde se posicionan líneas y clases. */
 .cal-colbody {
-  position: relative;
-  width: 100%;
+  background: #fff;
 }
 
 /* ---------- Etiquetas de hora ---------- */
 .cal-timelabel {
-  position: absolute;
-  right: 8px;
-  transform: translateY(-50%);
   font-size: 11px;
   color: var(--muted);
   white-space: nowrap;
@@ -156,22 +135,15 @@
 /* ---------- Línea horizontal cada 30 minutos ---------- */
 /* Se dibuja siempre, haya clase o no, para que se vean los huecos libres. */
 .cal-line {
-  position: absolute;
-  left: 0;
-  right: 0;
   border-top: 1px dashed #d5d9db;
-  pointer-events: none;
 }
 .cal-line.on-hour {
   border-top: 1px solid var(--dashed);
 }
 
 /* ---------- Caja de una clase ---------- */
-/* Va por encima de las líneas de la rejilla (z-index) y tapa las que cruza. */
+/* Va por encima de las líneas de la rejilla y tapa las que cruza. */
 .session-box {
-  position: absolute;
-  z-index: 2;
-  overflow: hidden;
   padding: 7px 9px 8px;
   cursor: pointer;
   line-height: 1.3;
