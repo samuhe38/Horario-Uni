@@ -1,111 +1,105 @@
 /**
  * calendar.js
- * Motor visual del horario.
+ * Dibuja el horario a partir de `state.sessions`.
  *
- * Funciona sobre una rejilla temporal real: el eje vertical va de 08:30 a
- * 20:30 con una línea horizontal cada 30 minutos, de modo que cada clase se
- * dibuja exactamente en su posición y con la altura que le corresponde por
- * duración. Así se ven de un vistazo los huecos libres entre clases.
+ * Estructura: una fila de columnas independientes (horas + los 5 días). Cada
+ * columna contiene DENTRO su propia cabecera y su propio cuerpo, de forma que
+ * las cabeceras y los días nunca pueden desalinearse.
  *
- * Cuando varias clases se solapan en un mismo día, NO se encogen: es la
- * columna de ese día la que se ensancha (x2, x3... según haga falta), de
- * forma que cada caja mantiene su ancho legible y quedan pegadas una al lado
- * de la otra dentro del mismo día.
+ * NOTA IMPORTANTE SOBRE LOS ESTILOS
+ * Los estilos que sostienen la ESTRUCTURA (display:flex del contenedor,
+ * position:relative de los cuerpos, altura de las cabeceras...) se aplican
+ * aquí en línea, desde JavaScript, además de estar en calendar.css. Es
+ * deliberado: si el navegador sirviera una versión antigua de calendar.css
+ * desde la caché, el calendario seguiría maquetándose bien en vez de
+ * apilarse. calendar.css se ocupa del aspecto (colores, tipografía, bordes).
  */
 
 import { state, DAY_NAMES } from "./state.js";
-import { toMinutes, pastel, escapeHtml } from "./utils.js";
+import { pastel, escapeHtml } from "./utils.js";
 import { openModal } from "./modal.js";
+import {
+  buildTimeSlots,
+  gridHeight,
+  layoutDay,
+  maxConcurrency,
+  sessionGeometry,
+  MIN_COL_WIDTH,
+  TIME_COL_WIDTH,
+  HEAD_HEIGHT,
+} from "./timeGrid.js";
 
-/* ----------------------------- Parámetros de la rejilla ----------------------------- */
+export { layoutDay };
 
-/** Primera línea de la rejilla: 08:30. */
-const GRID_START = 8 * 60 + 30;
-/** Última línea de la rejilla: 20:30. */
-const GRID_END = 20 * 60 + 30;
-/** Separación entre líneas horizontales, en minutos. */
-const SLOT_MINUTES = 30;
-/** Escala vertical. Con 2.2 px/min, media hora = 66 px y 1h30 = 198 px. */
-const PX_PER_MIN = 2.2;
-/** Ancho mínimo de una sub-columna (una clase) para que el texto siga siendo legible. */
-const MIN_COL_WIDTH = 230;
-/** Ancho de la columna de horas de la izquierda. */
-const TIME_COL_WIDTH = 68;
+/* ------------------------------ Piezas de la rejilla ------------------------------ */
 
-/** Convierte un instante en minutos a su posición vertical en píxeles. */
-function minutesToPx(minutes) {
-  return (minutes - GRID_START) * PX_PER_MIN;
+/** Cabecera de una columna (nombre del día, o vacía en la columna de horas). */
+function buildColumnHead(text) {
+  const head = document.createElement("div");
+  head.className = "cal-colhead";
+  head.textContent = text || "";
+  // Estructura crítica: misma altura en todas las cabeceras -> quedan alineadas.
+  head.style.height = HEAD_HEIGHT + "px";
+  head.style.display = "flex";
+  head.style.alignItems = "center";
+  head.style.justifyContent = "center";
+  head.style.flex = "0 0 auto";
+  return head;
 }
 
-/* --------------------------------- Solapamientos --------------------------------- */
+/** Cuerpo de una columna, con las líneas de la rejilla ya pintadas. */
+function buildColumnBody() {
+  const body = document.createElement("div");
+  body.className = "cal-colbody";
+  // Estructura crítica: lienzo de posicionamiento para líneas y clases.
+  body.style.position = "relative";
+  body.style.width = "100%";
+  body.style.height = gridHeight() + "px";
 
-/**
- * Agrupa las sesiones de un día en clusters (bloques de sesiones encadenadas
- * por solape) y asigna a cada sesión una columna dentro de su cluster,
- * mediante el algoritmo voraz habitual de asignación de intervalos.
- *
- * Cada sesión queda anotada con `_col`; cada cluster, con `_numCols`.
- */
-export function layoutDay(sessions) {
-  const sorted = [...sessions].sort(
-    (a, b) => toMinutes(a.start) - toMinutes(b.start) || toMinutes(a.end) - toMinutes(b.end)
-  );
-
-  const clusters = [];
-  let current = [];
-  let clusterEnd = -1;
-  sorted.forEach((s) => {
-    const st = toMinutes(s.start),
-      en = toMinutes(s.end);
-    if (current.length === 0 || st < clusterEnd) {
-      current.push(s);
-      clusterEnd = Math.max(clusterEnd, en);
-    } else {
-      clusters.push(current);
-      current = [s];
-      clusterEnd = en;
-    }
-  });
-  if (current.length) clusters.push(current);
-
-  clusters.forEach((cluster) => {
-    const columns = [];
-    cluster.forEach((s) => {
-      const st = toMinutes(s.start),
-        en = toMinutes(s.end);
-      let placed = false;
-      for (let i = 0; i < columns.length; i++) {
-        if (columns[i] <= st) {
-          columns[i] = en;
-          s._col = i;
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        columns.push(en);
-        s._col = columns.length - 1;
-      }
-    });
-    cluster._numCols = columns.length;
+  buildTimeSlots().forEach((slot) => {
+    const line = document.createElement("div");
+    line.className = "cal-line" + (slot.onHour ? " on-hour" : "");
+    line.style.position = "absolute";
+    line.style.left = "0";
+    line.style.right = "0";
+    line.style.top = slot.top + "px";
+    line.style.pointerEvents = "none";
+    body.appendChild(line);
   });
 
-  return clusters;
+  return body;
 }
 
-/**
- * Nº máximo de clases simultáneas de un día. Determina cuántas veces más
- * ancha debe ser la columna de ese día.
- */
-function maxConcurrency(clusters) {
-  return clusters.reduce((max, c) => Math.max(max, c._numCols), 1);
+/** Columna de la izquierda con las etiquetas de hora cada 30 minutos. */
+function buildTimeColumn() {
+  const col = document.createElement("div");
+  col.className = "cal-col cal-timecol";
+  col.style.display = "flex";
+  col.style.flexDirection = "column";
+  col.style.flex = `0 0 ${TIME_COL_WIDTH}px`;
+  col.style.width = TIME_COL_WIDTH + "px";
+
+  col.appendChild(buildColumnHead(""));
+  const body = buildColumnBody();
+
+  buildTimeSlots().forEach((slot) => {
+    const lbl = document.createElement("div");
+    lbl.className = "cal-timelabel" + (slot.onHour ? " on-hour" : "");
+    lbl.style.position = "absolute";
+    lbl.style.right = "8px";
+    lbl.style.top = slot.top + "px";
+    lbl.style.transform = "translateY(-50%)";
+    lbl.textContent = slot.label;
+    body.appendChild(lbl);
+  });
+
+  col.appendChild(body);
+  return col;
 }
 
-/* ------------------------------------ Render ------------------------------------ */
-
-/** HTML interno de una caja de sesión: hora + aula, siglas, grupos y semanas. */
+/** HTML interno de una caja de clase: hora + aula, siglas, grupos y semanas. */
 function buildSessionBoxContent(session, subject) {
-  // La hora va a la izquierda y el aula a la derecha, en esquinas opuestas.
+  // Hora a la izquierda y aula a la derecha, en esquinas opuestas.
   let inner = `<div class="sb-head">
       <span class="sb-time">${session.start} a ${session.end}</span>
       <span class="sb-room">${escapeHtml(session.room || "")}</span>
@@ -123,101 +117,75 @@ function buildSessionBoxContent(session, subject) {
   return inner;
 }
 
-/** Dibuja las líneas horizontales cada 30 minutos dentro de un contenedor. */
-function paintGridLines(container) {
-  for (let t = GRID_START; t <= GRID_END; t += SLOT_MINUTES) {
-    const line = document.createElement("div");
-    // Las líneas en punto se marcan un poco más que las de la media hora.
-    line.className = "cal-line" + (t % 60 === 0 ? " on-hour" : "");
-    line.style.top = minutesToPx(t) + "px";
-    container.appendChild(line);
-  }
+/** Caja de una clase, ya posicionada en su hora exacta. */
+function buildSessionBox(session, subject, totalCols) {
+  const geo = sessionGeometry(session, totalCols);
+
+  const box = document.createElement("div");
+  box.className = "session-box";
+  // Estructura crítica: posición real según la hora, por encima de las líneas.
+  box.style.position = "absolute";
+  box.style.zIndex = "2";
+  box.style.overflow = "hidden";
+  box.style.top = geo.top + "px";
+  box.style.height = geo.height + "px";
+  box.style.left = geo.leftPct + "%";
+  box.style.width = geo.widthPct + "%";
+  box.style.background = pastel(subject.color, 0.84);
+  box.title = `${subject.siglas} — ${subject.nombre}`;
+  box.innerHTML = buildSessionBoxContent(session, subject);
+  box.onclick = () => openModal(session, subject);
+  return box;
 }
 
-/** Repinta el calendario completo a partir de `state.sessions`. */
+/** Columna completa de un día, con sus clases colocadas. */
+function buildDayColumn(dayIndex) {
+  const daySessions = state.sessions.filter((s) => s.day === dayIndex);
+  const clusters = layoutDay(daySessions);
+  const cols = maxConcurrency(clusters);
+
+  const col = document.createElement("div");
+  col.className = "cal-col cal-daycol";
+  // Estructura crítica: el día se ensancha en proporción a sus clases
+  // simultáneas, en vez de encoger las cajas.
+  col.style.display = "flex";
+  col.style.flexDirection = "column";
+  col.style.flexGrow = String(cols);
+  col.style.flexShrink = "0";
+  col.style.flexBasis = "0";
+  col.style.minWidth = cols * MIN_COL_WIDTH + "px";
+
+  col.appendChild(buildColumnHead(DAY_NAMES[dayIndex]));
+  const body = buildColumnBody();
+
+  clusters.forEach((cluster) => {
+    cluster.forEach((s) => {
+      const subj = state.subjects.find((x) => x.id === s.subjectId);
+      if (!subj) return;
+      body.appendChild(buildSessionBox(s, subj, cols));
+    });
+  });
+
+  col.appendChild(body);
+  return col;
+}
+
+/* ------------------------------------ Render ------------------------------------ */
+
+/** Repinta el calendario completo. */
 export function renderCalendar() {
   const grid = document.getElementById("calGrid");
   grid.innerHTML = "";
 
-  const gridHeight = minutesToPx(GRID_END);
+  // Estructura crítica: las columnas van en fila, no apiladas.
+  grid.style.display = "flex";
+  grid.style.flexDirection = "row";
+  grid.style.alignItems = "flex-start";
 
-  // 1. Calcular, por día, cuántas clases simultáneas hay como máximo.
-  const perDay = [];
+  grid.appendChild(buildTimeColumn());
   for (let day = 0; day < 5; day++) {
-    const daySessions = state.sessions.filter((s) => s.day === day);
-    const clusters = layoutDay(daySessions);
-    perDay.push({ clusters, cols: maxConcurrency(clusters) });
+    grid.appendChild(buildDayColumn(day));
   }
-
-  // 2. Repartir el ancho: un día con 2 clases a la vez ocupa el doble, etc.
-  const totalCols = perDay.reduce((sum, d) => sum + d.cols, 0);
-  grid.style.gridTemplateColumns =
-    `${TIME_COL_WIDTH}px ` + perDay.map((d) => `${d.cols}fr`).join(" ");
-  grid.style.minWidth = TIME_COL_WIDTH + totalCols * MIN_COL_WIDTH + "px";
-
-  // 3. Fila de cabecera: esquina vacía + nombres de los días.
-  const corner = document.createElement("div");
-  corner.className = "cal-corner";
-  grid.appendChild(corner);
-
-  DAY_NAMES.forEach((name) => {
-    const d = document.createElement("div");
-    d.className = "cal-daylabel";
-    d.textContent = name;
-    grid.appendChild(d);
-  });
-
-  // 4. Columna de horas de la izquierda.
-  const timeCol = document.createElement("div");
-  timeCol.className = "cal-timecol";
-  timeCol.style.height = gridHeight + "px";
-  for (let t = GRID_START; t <= GRID_END; t += SLOT_MINUTES) {
-    const lbl = document.createElement("div");
-    lbl.className = "cal-timelabel" + (t % 60 === 0 ? " on-hour" : "");
-    lbl.style.top = minutesToPx(t) + "px";
-    const h = String(Math.floor(t / 60)).padStart(2, "0");
-    const m = String(t % 60).padStart(2, "0");
-    lbl.textContent = `${h}:${m}`;
-    timeCol.appendChild(lbl);
-  }
-  paintGridLines(timeCol);
-  grid.appendChild(timeCol);
-
-  // 5. Una columna por día, con sus líneas de fondo y sus clases encima.
-  perDay.forEach(({ clusters, cols }) => {
-    const col = document.createElement("div");
-    col.className = "cal-daycol";
-    col.style.height = gridHeight + "px";
-
-    paintGridLines(col);
-
-    clusters.forEach((cluster) => {
-      cluster.forEach((s) => {
-        const subj = state.subjects.find((x) => x.id === s.subjectId);
-        if (!subj) return;
-
-        const st = toMinutes(s.start);
-        const en = toMinutes(s.end);
-
-        const box = document.createElement("div");
-        box.className = "session-box";
-        // Posición y altura reales según la hora: si dos clases solo coinciden
-        // media hora, cada una queda a su altura exacta, no al mismo nivel.
-        box.style.top = minutesToPx(st) + "px";
-        box.style.height = Math.max((en - st) * PX_PER_MIN, 34) + "px";
-        // El día se ha ensanchado, así que cada sub-columna conserva su ancho.
-        box.style.left = (s._col / cols) * 100 + "%";
-        box.style.width = 100 / cols + "%";
-        box.style.background = pastel(subj.color, 0.84);
-        box.title = `${subj.siglas} — ${subj.nombre}`;
-        box.innerHTML = buildSessionBoxContent(s, subj);
-        box.onclick = () => openModal(s, subj);
-        col.appendChild(box);
-      });
-    });
-
-    grid.appendChild(col);
-  });
 
   document.getElementById("emptyNote").style.display = state.sessions.length ? "none" : "block";
 }
