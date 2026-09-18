@@ -1,11 +1,13 @@
 /**
  * calendar.css
  * Todo lo que vive dentro de #exportArea: título + caja de curso/semestre,
- * la rejilla del calendario y la leyenda. Esta es la parte que imita al
- * milímetro el horario oficial de la ESI (medido con cuentagotas de píxel
- * sobre el PDF real): tipografía Arial, negro/blanco + los dos tonos exactos
- * de teal del original, esquinas rectas, sin sombras, filas de altura
- * automática y huecos discontinuos solo cuando hay solape real.
+ * la rejilla del calendario y la leyenda. Esta es la parte que imita el
+ * horario oficial de la ESI (colores medidos con cuentagotas de píxel sobre
+ * el PDF real): tipografía Arial, negro/blanco + los dos tonos exactos de
+ * teal del original, esquinas rectas y sin sombras.
+ *
+ * El calendario usa una rejilla temporal real: línea horizontal cada 30
+ * minutos de 08:30 a 20:30, y cada clase posicionada en su altura exacta.
  *
  * Depende de las variables de color definidas en :root en base.css
  * (--teal, --teal-dark, --dashed, --muted...), así que base.css debe
@@ -76,7 +78,7 @@
   }
 }
 
-/* ---------- Calendario ---------- */
+/* ---------- Rejilla del calendario ---------- */
 .cal-wrap {
   margin-top: 16px;
   border: 1px solid #000;
@@ -85,11 +87,16 @@
 .cal-scroll {
   overflow-x: auto;
 }
+/* grid-template-columns y min-width los calcula calendar.js, porque el ancho
+   de cada día depende de cuántas clases simultáneas tenga ese día. */
 .cal-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  min-width: 1150px;
   align-items: stretch;
+}
+
+.cal-corner {
+  border-bottom: 1px solid #000;
+  background: #fff;
 }
 .cal-daylabel {
   text-align: center;
@@ -101,67 +108,101 @@
   border-left: 1px solid #000;
   background: #fff;
 }
-.cal-daylabel:first-child {
-  border-left: none;
+
+/* ---------- Columna de horas ---------- */
+.cal-timecol {
+  position: relative;
+  background: #fff;
 }
+.cal-timelabel {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cal-timelabel.on-hour {
+  font-weight: 700;
+  color: #000;
+  font-size: 12px;
+}
+
+/* ---------- Columnas de los días ---------- */
 .cal-daycol {
+  position: relative;
   border-left: 1px solid #000;
   background: #fff;
-  display: flex;
-  flex-direction: column;
-}
-.cal-daycol:first-child {
-  border-left: none;
 }
 
-/* Cada franja horaria es una fila que crece con su propio contenido — como en
-   el horario real, donde la altura de cada celda depende de lo que contiene
-   y no de un reloj proporcional. */
-.cluster-row {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 1px dashed var(--dashed);
+/* Línea horizontal cada 30 minutos. Se dibuja siempre, haya clase o no, para
+   que se vean los huecos libres del día. */
+.cal-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #d5d9db;
+  pointer-events: none;
+}
+.cal-line.on-hour {
+  border-top: 1px solid var(--dashed);
 }
 
+/* ---------- Caja de una clase ---------- */
+/* Se posiciona en su hora exacta y se superpone a las líneas de la rejilla. */
 .session-box {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 10px 11px 12px;
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  padding: 7px 9px 8px;
   cursor: pointer;
-  line-height: 1.35;
+  line-height: 1.3;
+  border: 1px solid rgba(0, 0, 0, 0.22);
 }
-.session-box + .session-box {
-  border-left: 1px solid rgba(0, 0, 0, 0.18);
+
+/* Hora a la izquierda y aula a la derecha, en esquinas opuestas. */
+.sb-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
 }
-.session-box .sb-time {
+.sb-time {
   color: #000;
-  font-size: 13px;
-  font-weight: 400;
+  font-size: 12.5px;
+  white-space: nowrap;
 }
+.sb-room {
+  color: #000;
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-align: right;
+}
+
 .session-box .sb-siglas {
   font-weight: 700;
   text-align: center;
-  font-size: 19px;
-  margin: 4px 0 6px;
+  font-size: 18px;
+  margin: 3px 0 5px;
   letter-spacing: 0.2px;
 }
 .sb-grupo {
   border: 1.5px solid var(--teal);
   border-radius: 3px;
   background: #fff;
-  padding: 3px 8px;
-  font-size: 13.5px;
+  padding: 2px 7px;
+  font-size: 13px;
   text-align: center;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   font-weight: 600;
   color: #0c4d4d;
 }
 .sb-weeks {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 6px;
-  font-size: 11px;
-  margin-bottom: 9px;
+  gap: 1px 5px;
+  font-size: 10.5px;
+  margin-bottom: 6px;
   color: #111;
 }
 .sb-weeks span.off {
