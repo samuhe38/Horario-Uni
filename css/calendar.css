@@ -6,8 +6,10 @@
  * el PDF real): tipografía Arial, negro/blanco + los dos tonos exactos de
  * teal del original, esquinas rectas y sin sombras.
  *
- * El calendario usa una rejilla temporal real: línea horizontal cada 30
- * minutos de 08:30 a 20:30, y cada clase posicionada en su altura exacta.
+ * El calendario es una fila flex de columnas (horas + 5 días). Cada columna
+ * contiene su propia cabecera y su propio cuerpo, así que nada se puede
+ * desalinear. El eje vertical es una rejilla temporal real: una línea cada
+ * 30 minutos de 08:30 a 20:30, con las clases posicionadas encima.
  *
  * Depende de las variables de color definidas en :root en base.css
  * (--teal, --teal-dark, --dashed, --muted...), así que base.css debe
@@ -78,7 +80,7 @@
   }
 }
 
-/* ---------- Rejilla del calendario ---------- */
+/* ---------- Estructura del calendario ---------- */
 .cal-wrap {
   margin-top: 16px;
   border: 1px solid #000;
@@ -87,33 +89,56 @@
 .cal-scroll {
   overflow-x: auto;
 }
-/* grid-template-columns y min-width los calcula calendar.js, porque el ancho
-   de cada día depende de cuántas clases simultáneas tenga ese día. */
+
+/* Fila de columnas. Cada columna es autocontenida (cabecera + cuerpo). */
 .cal-grid {
-  display: grid;
-  align-items: stretch;
+  display: flex;
+  align-items: flex-start;
 }
 
-.cal-corner {
-  border-bottom: 1px solid #000;
+.cal-col {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Columna de horas: ancho fijo, no crece. */
+.cal-timecol {
+  flex: 0 0 68px;
+  width: 68px;
   background: #fff;
 }
-.cal-daylabel {
-  text-align: center;
-  font-weight: 700;
-  color: #000;
-  font-size: 15px;
-  padding: 9px 4px;
-  border-bottom: 1px solid #000;
+
+/* Columnas de día: flex-grow y min-width los fija calendar.js según cuántas
+   clases simultáneas tenga ese día (así el día se ensancha en vez de
+   encogerse las cajas). */
+.cal-daycol {
+  flex-basis: 0;
   border-left: 1px solid #000;
   background: #fff;
 }
 
-/* ---------- Columna de horas ---------- */
-.cal-timecol {
-  position: relative;
+/* Cabecera de columna: misma altura en todas, por eso quedan alineadas. */
+.cal-colhead {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
+  color: #000;
+  font-size: 15px;
+  border-bottom: 1px solid #000;
   background: #fff;
 }
+
+/* Cuerpo de columna: lienzo donde se posicionan líneas y clases. */
+.cal-colbody {
+  position: relative;
+  width: 100%;
+}
+
+/* ---------- Etiquetas de hora ---------- */
 .cal-timelabel {
   position: absolute;
   right: 8px;
@@ -128,15 +153,8 @@
   font-size: 12px;
 }
 
-/* ---------- Columnas de los días ---------- */
-.cal-daycol {
-  position: relative;
-  border-left: 1px solid #000;
-  background: #fff;
-}
-
-/* Línea horizontal cada 30 minutos. Se dibuja siempre, haya clase o no, para
-   que se vean los huecos libres del día. */
+/* ---------- Línea horizontal cada 30 minutos ---------- */
+/* Se dibuja siempre, haya clase o no, para que se vean los huecos libres. */
 .cal-line {
   position: absolute;
   left: 0;
@@ -149,7 +167,7 @@
 }
 
 /* ---------- Caja de una clase ---------- */
-/* Se posiciona en su hora exacta y se superpone a las líneas de la rejilla. */
+/* Va por encima de las líneas de la rejilla (z-index) y tapa las que cruza. */
 .session-box {
   position: absolute;
   z-index: 2;
@@ -167,15 +185,13 @@
   align-items: baseline;
   gap: 10px;
 }
-.sb-time {
+.sb-time,
+.sb-room {
   color: #000;
   font-size: 12.5px;
   white-space: nowrap;
 }
 .sb-room {
-  color: #000;
-  font-size: 12.5px;
-  white-space: nowrap;
   text-align: right;
 }
 
