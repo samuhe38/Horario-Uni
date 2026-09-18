@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mi Horario · Estilo ESI UCA</title>
 <meta name="description" content="Editor de horarios académicos que reproduce el diseño visual de los horarios oficiales de la Escuela Superior de Ingeniería (ESI), Universidad de Cádiz.">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/calendar.css">
+<!-- El ?v=2 fuerza al navegador a descargar estos archivos de nuevo en lugar
+     de reutilizar una versión antigua guardada en la caché. Si algún día
+     vuelves a cambiar el CSS o el JS y no ves los cambios, sube el número. -->
+<link rel="stylesheet" href="css/base.css?v=2">
+<link rel="stylesheet" href="css/calendar.css?v=2">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -72,7 +75,7 @@
     <!-- Sesiones -->
     <div class="card">
       <h2>Sesiones del horario</h2>
-      <p class="hint">Una sesión es un hueco día + hora + aula para una asignatura. Dentro de una misma sesión puedes añadir varios grupos (teoría, problemas, prácticas...) que se imparten juntos, tal cual aparece en los horarios oficiales. Si dos sesiones se solapan en el tiempo, el editor las coloca automáticamente en columnas contiguas más estrechas dentro del mismo día; si una sesión va sola, ocupa todo el ancho.</p>
+      <p class="hint">Una sesión es un hueco día + hora + aula para una asignatura. Dentro de una misma sesión puedes añadir varios grupos (teoría, problemas, prácticas...) que se imparten juntos, tal cual aparece en los horarios oficiales. Si dos sesiones se solapan en el tiempo, la columna de ese día se ensancha automáticamente para que ambas se sigan leyendo bien.</p>
 
       <div class="grid-form">
         <div class="field">
@@ -240,6 +243,6 @@
   </div>
 </div>
 
-<script type="module" src="js/main.js"></script>
+<script type="module" src="js/main.js?v=2"></script>
 </body>
 </html>
