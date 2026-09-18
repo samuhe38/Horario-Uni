@@ -23,12 +23,14 @@ en el navegador.
   (teoría, problemas, prácticas informáticas, prácticas de laboratorio...).
 - **Semanas activas por grupo** — marca semana a semana en qué semanas hay
   clase, igual que la fila de números 1–16 del horario oficial.
-- **Solapamientos automáticos** — si dos sesiones coinciden en el mismo
-  horario, se colocan en columnas contiguas más estrechas dentro del mismo
-  día; si no hay solape, la sesión ocupa todo el ancho disponible.
-- **Filas de altura automática** — cada franja crece según su propio
-  contenido, tal como en la tabla original, en vez de forzar una escala de
-  reloj que comprima el texto.
+- **Rejilla de 30 minutos** — una línea horizontal cada media hora, de 08:30
+  a 20:30, dibujada siempre aunque no haya clase, para ver de un vistazo los
+  huecos libres del día. Cada clase empieza exactamente en su línea y se
+  pinta por encima de la rejilla.
+- **Solapamientos sin encoger nada** — si dos clases coinciden, la columna de
+  ese día se ensancha (x2, x3...) y las cajas se quedan pegadas una al lado
+  de la otra manteniendo su tamaño legible. Si solo se solapan media hora,
+  cada una queda a su altura real.
 - **Réplica visual fiel** — tipografía Arial, los dos tonos exactos de teal
   del original (`#008080` y `#065E78`), esquinas rectas, huecos discontinuos
   cuando no hay solape... todo verificado a partir del PDF real.
@@ -74,21 +76,22 @@ Server*.
 ## 📁 Estructura del proyecto
 
 ```
-horario-esi/
+Horario-Uni/
 ├── index.html                # Punto de entrada
 ├── css/
 │   ├── base.css                # Interfaz de la herramienta (topbar, pestañas, formularios, modal)
-│   └── calendar.css            # Réplica visual del horario ESI — lo que se exporta a PNG
+│   └── calendar.css            # Aspecto visual del horario ESI — lo que se exporta a PNG
 ├── js/
 │   ├── main.js                  # Arranque de la app y conexión de eventos
 │   ├── state.js                  # Estado global compartido
 │   ├── utils.js                   # Funciones puras (color, tiempo, ids, escape html)
-│   ├── storage.js                  # Persistencia en localStorage
-│   ├── subjects.js                  # CRUD de asignaturas
-│   ├── sessionForm.js                # Formulario de sesiones, grupos y semanas activas
-│   ├── calendar.js                    # Motor de solapamientos (layoutDay) y render del calendario
-│   ├── modal.js                        # Modal de detalle de sesión
-│   └── importExport.js                  # Import/Export JSON + exportación a PNG (html2canvas)
+│   ├── timeGrid.js                 # Geometría de la rejilla temporal y cálculo de solapes
+│   ├── storage.js                   # Persistencia en localStorage
+│   ├── subjects.js                   # CRUD de asignaturas
+│   ├── sessionForm.js                 # Formulario de sesiones, grupos y semanas activas
+│   ├── calendar.js                     # Construcción del calendario en el DOM
+│   ├── modal.js                         # Modal de detalle de sesión
+│   └── importExport.js                   # Import/Export JSON + exportación a PNG (html2canvas)
 ├── examples/
 │   └── ejemplo-horario.json    # Horario de ejemplo real (1ºA Ingeniería Informática, curso 2026-2027)
 ├── LICENSE
@@ -101,6 +104,26 @@ resto mediante funciones exportadas explícitas — sin variables globales ni
 dependencias circulares. `main.js` es el único módulo que conoce a todos los
 demás; el resto no se importan entre sí salvo cuando es estrictamente
 necesario (por ejemplo, `calendar.js` importa `openModal` de `modal.js`).
+
+`timeGrid.js` concentra toda la geometría del calendario (a qué altura va
+cada hora, dónde empieza y cuánto mide cada clase, y cómo se reparten las
+clases solapadas en columnas). Al ser lógica pura sin DOM, se puede probar de
+forma aislada, y `calendar.js` se limita a traducir esos cálculos a elementos
+HTML.
+
+### Sobre el reparto entre CSS y JS
+
+Los estilos que sostienen la **estructura** del calendario (`display:flex` del
+contenedor, `position:relative` de los cuerpos de columna, alturas y anchos)
+se aplican en línea desde `calendar.js`, además de estar en `calendar.css`.
+Es deliberado: si el navegador sirviera una versión antigua de la hoja de
+estilos desde su caché, el calendario seguiría maquetándose correctamente en
+lugar de apilar los días uno debajo de otro. `calendar.css` se ocupa del
+aspecto (colores, tipografía, bordes).
+
+Por el mismo motivo, `index.html` enlaza los archivos con un parámetro de
+versión (`css/calendar.css?v=2`). Si cambias el CSS o el JS y no ves los
+cambios reflejados, sube ese número y recarga.
 
 ## 🧩 Modelo de datos
 
