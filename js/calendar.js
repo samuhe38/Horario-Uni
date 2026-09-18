@@ -1,25 +1,50 @@
 /**
  * calendar.js
- * El corazón visual de la app: agrupa las sesiones de cada día en "clusters"
- * (franjas que se solapan en el tiempo) y las dibuja como filas de altura
- * automática, igual que la tabla del horario oficial de la ESI — sin escala
- * de reloj fija. Si una sesión va sola ocupa el 100% del ancho del día; si
- * dos o más se solapan, se reparten el ancho a partes iguales.
+ * Motor visual del horario.
+ *
+ * Funciona sobre una rejilla temporal real: el eje vertical va de 08:30 a
+ * 20:30 con una línea horizontal cada 30 minutos, de modo que cada clase se
+ * dibuja exactamente en su posición y con la altura que le corresponde por
+ * duración. Así se ven de un vistazo los huecos libres entre clases.
+ *
+ * Cuando varias clases se solapan en un mismo día, NO se encogen: es la
+ * columna de ese día la que se ensancha (x2, x3... según haga falta), de
+ * forma que cada caja mantiene su ancho legible y quedan pegadas una al lado
+ * de la otra dentro del mismo día.
  */
 
 import { state, DAY_NAMES } from "./state.js";
 import { toMinutes, pastel, escapeHtml } from "./utils.js";
 import { openModal } from "./modal.js";
 
+/* ----------------------------- Parámetros de la rejilla ----------------------------- */
+
+/** Primera línea de la rejilla: 08:30. */
+const GRID_START = 8 * 60 + 30;
+/** Última línea de la rejilla: 20:30. */
+const GRID_END = 20 * 60 + 30;
+/** Separación entre líneas horizontales, en minutos. */
+const SLOT_MINUTES = 30;
+/** Escala vertical. Con 2.2 px/min, media hora = 66 px y 1h30 = 198 px. */
+const PX_PER_MIN = 2.2;
+/** Ancho mínimo de una sub-columna (una clase) para que el texto siga siendo legible. */
+const MIN_COL_WIDTH = 230;
+/** Ancho de la columna de horas de la izquierda. */
+const TIME_COL_WIDTH = 68;
+
+/** Convierte un instante en minutos a su posición vertical en píxeles. */
+function minutesToPx(minutes) {
+  return (minutes - GRID_START) * PX_PER_MIN;
+}
+
+/* --------------------------------- Solapamientos --------------------------------- */
+
 /**
- * Agrupa las sesiones de un día en clusters cronológicos y, dentro de cada
- * cluster, asigna una columna a cada sesión mediante un algoritmo voraz de
- * asignación de intervalos (el mismo que usan los calendarios tipo Google
- * Calendar para repartir eventos solapados en columnas).
+ * Agrupa las sesiones de un día en clusters (bloques de sesiones encadenadas
+ * por solape) y asigna a cada sesión una columna dentro de su cluster,
+ * mediante el algoritmo voraz habitual de asignación de intervalos.
  *
- * Devuelve un array de clusters en orden cronológico. Cada sesión queda
- * anotada con `_col` (su columna dentro del cluster) y cada cluster con
- * `_numCols` (cuántas columnas reales tiene esa franja).
+ * Cada sesión queda anotada con `_col`; cada cluster, con `_numCols`.
  */
 export function layoutDay(sessions) {
   const sorted = [...sessions].sort(
@@ -68,11 +93,23 @@ export function layoutDay(sessions) {
   return clusters;
 }
 
-/** Construye el HTML interno de una caja de sesión (hora, siglas, grupos, semanas). */
+/**
+ * Nº máximo de clases simultáneas de un día. Determina cuántas veces más
+ * ancha debe ser la columna de ese día.
+ */
+function maxConcurrency(clusters) {
+  return clusters.reduce((max, c) => Math.max(max, c._numCols), 1);
+}
+
+/* ------------------------------------ Render ------------------------------------ */
+
+/** HTML interno de una caja de sesión: hora + aula, siglas, grupos y semanas. */
 function buildSessionBoxContent(session, subject) {
-  let inner = `<div class="sb-time">${session.start} a ${session.end}${
-    session.room ? "&nbsp;&nbsp;" + escapeHtml(session.room) : ""
-  }</div>
+  // La hora va a la izquierda y el aula a la derecha, en esquinas opuestas.
+  let inner = `<div class="sb-head">
+      <span class="sb-time">${session.start} a ${session.end}</span>
+      <span class="sb-room">${escapeHtml(session.room || "")}</span>
+    </div>
     <div class="sb-siglas" style="color:${subject.color}">${escapeHtml(subject.siglas)}</div>`;
 
   session.grupos.forEach((g) => {
@@ -86,10 +123,42 @@ function buildSessionBoxContent(session, subject) {
   return inner;
 }
 
+/** Dibuja las líneas horizontales cada 30 minutos dentro de un contenedor. */
+function paintGridLines(container) {
+  for (let t = GRID_START; t <= GRID_END; t += SLOT_MINUTES) {
+    const line = document.createElement("div");
+    // Las líneas en punto se marcan un poco más que las de la media hora.
+    line.className = "cal-line" + (t % 60 === 0 ? " on-hour" : "");
+    line.style.top = minutesToPx(t) + "px";
+    container.appendChild(line);
+  }
+}
+
 /** Repinta el calendario completo a partir de `state.sessions`. */
 export function renderCalendar() {
   const grid = document.getElementById("calGrid");
   grid.innerHTML = "";
+
+  const gridHeight = minutesToPx(GRID_END);
+
+  // 1. Calcular, por día, cuántas clases simultáneas hay como máximo.
+  const perDay = [];
+  for (let day = 0; day < 5; day++) {
+    const daySessions = state.sessions.filter((s) => s.day === day);
+    const clusters = layoutDay(daySessions);
+    perDay.push({ clusters, cols: maxConcurrency(clusters) });
+  }
+
+  // 2. Repartir el ancho: un día con 2 clases a la vez ocupa el doble, etc.
+  const totalCols = perDay.reduce((sum, d) => sum + d.cols, 0);
+  grid.style.gridTemplateColumns =
+    `${TIME_COL_WIDTH}px ` + perDay.map((d) => `${d.cols}fr`).join(" ");
+  grid.style.minWidth = TIME_COL_WIDTH + totalCols * MIN_COL_WIDTH + "px";
+
+  // 3. Fila de cabecera: esquina vacía + nombres de los días.
+  const corner = document.createElement("div");
+  corner.className = "cal-corner";
+  grid.appendChild(corner);
 
   DAY_NAMES.forEach((name) => {
     const d = document.createElement("div");
@@ -98,38 +167,57 @@ export function renderCalendar() {
     grid.appendChild(d);
   });
 
-  for (let day = 0; day < 5; day++) {
+  // 4. Columna de horas de la izquierda.
+  const timeCol = document.createElement("div");
+  timeCol.className = "cal-timecol";
+  timeCol.style.height = gridHeight + "px";
+  for (let t = GRID_START; t <= GRID_END; t += SLOT_MINUTES) {
+    const lbl = document.createElement("div");
+    lbl.className = "cal-timelabel" + (t % 60 === 0 ? " on-hour" : "");
+    lbl.style.top = minutesToPx(t) + "px";
+    const h = String(Math.floor(t / 60)).padStart(2, "0");
+    const m = String(t % 60).padStart(2, "0");
+    lbl.textContent = `${h}:${m}`;
+    timeCol.appendChild(lbl);
+  }
+  paintGridLines(timeCol);
+  grid.appendChild(timeCol);
+
+  // 5. Una columna por día, con sus líneas de fondo y sus clases encima.
+  perDay.forEach(({ clusters, cols }) => {
     const col = document.createElement("div");
     col.className = "cal-daycol";
+    col.style.height = gridHeight + "px";
 
-    const daySessions = state.sessions.filter((s) => s.day === day);
-    const clusters = layoutDay(daySessions);
+    paintGridLines(col);
 
     clusters.forEach((cluster) => {
-      const row = document.createElement("div");
-      row.className = "cluster-row";
-
-      // Se reparte en columnas solo si hay solape real (_numCols > 1).
-      // Sin solape, la única sesión del cluster ocupa el 100% del ancho.
-      const ordered = [...cluster].sort((a, b) => a._col - b._col);
-
-      ordered.forEach((s) => {
+      cluster.forEach((s) => {
         const subj = state.subjects.find((x) => x.id === s.subjectId);
         if (!subj) return;
+
+        const st = toMinutes(s.start);
+        const en = toMinutes(s.end);
+
         const box = document.createElement("div");
         box.className = "session-box";
+        // Posición y altura reales según la hora: si dos clases solo coinciden
+        // media hora, cada una queda a su altura exacta, no al mismo nivel.
+        box.style.top = minutesToPx(st) + "px";
+        box.style.height = Math.max((en - st) * PX_PER_MIN, 34) + "px";
+        // El día se ha ensanchado, así que cada sub-columna conserva su ancho.
+        box.style.left = (s._col / cols) * 100 + "%";
+        box.style.width = 100 / cols + "%";
         box.style.background = pastel(subj.color, 0.84);
         box.title = `${subj.siglas} — ${subj.nombre}`;
         box.innerHTML = buildSessionBoxContent(s, subj);
         box.onclick = () => openModal(s, subj);
-        row.appendChild(box);
+        col.appendChild(box);
       });
-
-      col.appendChild(row);
     });
 
     grid.appendChild(col);
-  }
+  });
 
   document.getElementById("emptyNote").style.display = state.sessions.length ? "none" : "block";
 }
