@@ -185,8 +185,26 @@
         { "code": "A1", "tipo": "Clases de teoría", "weeksTotal": 16, "weeksActive": [true,true,true,false,...] }
       ]
     }
-  ]
+  ],
+  "miniCalendar": {
+    "enabled": true,
+    "startDate": "2026-09-21",
+    "weeksCount": 16,
+    "breaks": [
+      { "start": "2026-12-28", "end": "2027-01-03" }
+    ],
+    "notes": [
+      "Las clases del jueves de la semana 2 se impartirán el viernes de la semana 1."
+    ]
+  }
 }</pre>
+      <p class="hint" style="margin-top:8px;">
+        El bloque <code>miniCalendar</code> es opcional: si no lo incluyes, el mini calendario simplemente
+        no se activa (sigue apagado por defecto, tal y como esté configurado ahora mismo en la herramienta).
+        Si lo incluyes, rellena tú mismo <code>startDate</code> (el lunes de la semana 1), <code>weeksCount</code>
+        (semanas lectivas) y, si hay periodos sin clase (Navidad, Semana Santa...), añádelos en
+        <code>breaks</code>: esas semanas no se numeran, igual que en el horario oficial.
+      </p>
       <label for="importText" style="margin-top:10px;">Pega aquí el JSON</label>
       <textarea id="importText" placeholder="Pega aquí el bloque JSON..."></textarea>
       <div class="actions-row">
@@ -201,6 +219,38 @@
         tienes, exporta primero tu horario actual con el botón «Exportar .json» de la barra superior.
       </p>
     </div>
+  </div>
+
+  <!-- ===================== MINI CALENDARIO DEL CUATRIMESTRE ===================== -->
+  <div class="card">
+    <h2>Mini calendario del cuatrimestre</h2>
+    <p class="hint">
+      El bloque de meses con las semanas numeradas que aparece en la esquina del horario oficial. Es
+      independiente de las sesiones: solo marca qué semana del curso es cada fecha. Si el cuatrimestre
+      tiene un periodo sin clase (por ejemplo Navidad), añádelo abajo: esas semanas no se numeran, igual
+      que en el documento oficial.
+    </p>
+    <div class="grid-form">
+      <div class="field">
+        <label for="mcEnabled">Mostrar mini calendario</label>
+        <select id="mcEnabled">
+          <option value="0">No</option>
+          <option value="1">Sí</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="mcStartDate">Lunes de la semana 1</label>
+        <input type="date" id="mcStartDate">
+      </div>
+      <div class="field">
+        <label for="mcWeeksCount">Número de semanas lectivas</label>
+        <input type="number" id="mcWeeksCount" min="1" max="20" value="16">
+      </div>
+    </div>
+    <label style="margin-top:12px;">Periodos sin clase (uno por línea, formato AAAA-MM-DD,AAAA-MM-DD)</label>
+    <textarea id="mcBreaks" placeholder="Ej: 2026-12-28,2027-01-03" style="min-height:60px;"></textarea>
+    <label style="margin-top:12px;">Notas de reprogramación (una por línea, opcional)</label>
+    <textarea id="mcNotes" placeholder="Ej: Las clases del jueves de la semana 2 se impartirán el viernes de la semana 1." style="min-height:60px;"></textarea>
   </div>
 
   <!-- ===================== ZONA EXPORTABLE: título + meta + calendario + leyenda ===================== -->
@@ -228,10 +278,14 @@
       Aún no has añadido ninguna sesión. Crea tus asignaturas y sesiones arriba, o importa tu horario en la pestaña 2.
     </div>
 
-    <div class="legend" id="legendBox"></div>
+    <div class="bottom-row">
+      <div class="legend" id="legendBox"></div>
+      <div id="miniCalendarBox" class="mini-calendar" style="display:none;"></div>
+    </div>
   </div>
 
 </div>
+
 
 <!-- Modal de detalle de sesión -->
 <div class="modal-overlay" id="modalOverlay">
