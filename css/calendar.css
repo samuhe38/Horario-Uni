@@ -148,14 +148,18 @@
   cursor: pointer;
   line-height: 1.3;
   border: 1px solid rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Hora a la izquierda y aula a la derecha, en esquinas opuestas. */
+/* Hora a la izquierda y aula a la derecha, en esquinas opuestas. Se queda
+   fija arriba de la caja (no forma parte del bloque que se centra). */
 .sb-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 10px;
+  flex: 0 0 auto;
 }
 .sb-time,
 .sb-room {
@@ -173,7 +177,20 @@
   font-size: 18px;
   margin: 3px 0 5px;
   letter-spacing: 0.2px;
+  flex: 0 0 auto;
 }
+
+/* El grupo y sus semanas activas ocupan el resto de la caja y se centran en
+   ese espacio, en vez de quedarse pegados arriba cuando la sesión es larga
+   (por ejemplo una clase de 2-3 horas) y sobra alto libre debajo. */
+.sb-groups {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+}
+
 .sb-grupo {
   border: 1.5px solid var(--teal);
   border-radius: 3px;
@@ -193,6 +210,9 @@
   margin-bottom: 6px;
   color: #111;
 }
+.sb-weeks:last-child {
+  margin-bottom: 0;
+}
 .sb-weeks span.off {
   color: #c3c8ca;
 }
@@ -204,13 +224,80 @@
   padding: 40px 20px;
 }
 
+/* Fila inferior: leyenda a la izquierda, mini-calendario a la derecha, con
+   espacio entre ambos — igual que en el horario oficial (leyenda abajo a la
+   izquierda, meses del cuatrimestre abajo a la derecha). */
+.bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding: 0 14px;
+}
+
 /* ---------- Leyenda: texto plano coloreado, igual que el original — sin caja ---------- */
 .legend {
-  margin-top: 14px;
-  padding: 4px 14px 0;
+  flex: 0 1 auto;
 }
 .legend-item {
   font-size: 12.5px;
   margin-bottom: 5px;
   font-weight: 700;
 }
+
+/* ---------- Mini-calendario del cuatrimestre ---------- */
+/* Igual que el bloque de meses de la esquina del horario oficial: uno por
+   mes, filas de lunes a domingo sin cabecera de día, y el número de semana
+   del curso a la izquierda de cada fila que empieza dentro del cuatrimestre. */
+.mini-calendar {
+  flex: 0 1 auto;
+  margin-left: auto;
+}
+.mc-months {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 26px;
+}
+.mc-month {
+  font-size: 10.5px;
+  color: #000;
+}
+.mc-monthname {
+  font-weight: 700;
+  color: var(--teal-dark);
+  margin-bottom: 3px;
+}
+.mc-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 1px;
+}
+.mc-weeknum {
+  display: inline-block;
+  width: 14px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--teal);
+  margin-right: 2px;
+}
+.mc-day {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+}
+.mc-day.mc-blank {
+  visibility: hidden;
+}
+.mc-notes {
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.mc-note {
+  margin-bottom: 2px;
+}
+
