@@ -67,6 +67,23 @@ export function importFromObject(obj) {
   if (obj.semestre) state.meta.semestre = obj.semestre;
   if (obj.grupo) state.meta.grupo = obj.grupo;
 
+  // El mini calendario es opcional: si el JSON no trae "miniCalendar", no se
+  // activa nada solo (sigue como estaba, apagado por defecto). Si lo trae,
+  // se puede rellenar entero (fecha de inicio, semanas, vacaciones y notas)
+  // sin tocar el formulario a mano.
+  if (obj.miniCalendar && typeof obj.miniCalendar === "object") {
+    const mc = obj.miniCalendar;
+    state.miniCalendar = {
+      enabled: !!mc.enabled,
+      startDate: mc.startDate || "",
+      weeksCount: mc.weeksCount || 16,
+      breaks: Array.isArray(mc.breaks)
+        ? mc.breaks.filter((b) => b && b.start && b.end).map((b) => ({ start: b.start, end: b.end }))
+        : [],
+      notes: Array.isArray(mc.notes) ? mc.notes.filter((n) => typeof n === "string") : [],
+    };
+  }
+
   return true;
 }
 
@@ -117,13 +134,38 @@ export async function downloadPNG() {
   btn.disabled = true;
   btn.textContent = "Generando imagen…";
 
+  const shell = document.querySelector(".shell");
   const scrollBox = document.querySelector(".cal-scroll");
-  const prevOverflow = scrollBox.style.overflow;
-  scrollBox.style.overflow = "visible"; // para que no se recorte el ancho scrolleable
+  const target = document.getElementById("exportArea");
+
+  // Guardamos los estilos que vamos a tocar para restaurarlos después.
+  const prevShellMaxWidth = shell ? shell.style.maxWidth : null;
+  const prevScrollOverflow = scrollBox.style.overflow;
+  const prevScrollWidth = scrollBox.style.width;
+
+  // El contenedor ".shell" tiene un max-width para verse bien en pantalla,
+  // y ".cal-scroll" recorta con scroll horizontal cuando el horario es más
+  // ancho que la pantalla (por ejemplo, con días que llevan solapes). Antes
+  // de hacer la foto quitamos ambas limitaciones para que TODO el horario se
+  // despliegue a su ancho real; si no, html2canvas solo capturaba la parte
+  // que cabía en pantalla y el resto se quedaba cortado en la imagen.
+  if (shell) shell.style.maxWidth = "none";
+  scrollBox.style.overflow = "visible";
+  scrollBox.style.width = "max-content";
 
   try {
-    const target = document.getElementById("exportArea");
-    const canvas = await html2canvas(target, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+    // Con las limitaciones ya quitadas, medimos el tamaño real desplegado.
+    const fullWidth = target.scrollWidth;
+    const fullHeight = target.scrollHeight;
+
+    const canvas = await html2canvas(target, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      width: fullWidth,
+      height: fullHeight,
+      windowWidth: fullWidth,
+    });
     const link = document.createElement("a");
     const safeName = (state.meta.titulo || "horario").toLowerCase().replace(/[^a-z0-9]+/gi, "_");
     link.download = safeName + ".png";
@@ -134,8 +176,11 @@ export async function downloadPNG() {
   } catch (err) {
     alert("No se pudo generar la imagen: " + err.message);
   } finally {
-    scrollBox.style.overflow = prevOverflow;
+    if (shell) shell.style.maxWidth = prevShellMaxWidth;
+    scrollBox.style.overflow = prevScrollOverflow;
+    scrollBox.style.width = prevScrollWidth;
     btn.disabled = false;
     btn.textContent = original;
   }
 }
+
