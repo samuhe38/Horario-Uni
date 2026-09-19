@@ -23,5 +23,19 @@
       "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]}]},
     { "subjectId":"sdig","day":2,"start":"11:30","end":"13:00","room":"Aula B04",
       "grupos":[{"code":"A1","tipo":"Clases de teoría","weeksTotal":16,"weeksActive":[true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true]}]}
-  ]
+  ],
+  "miniCalendar": {
+    "enabled": true,
+    "startDate": "2026-09-21",
+    "weeksCount": 16,
+    "breaks": [
+      { "start": "2026-12-28", "end": "2027-01-03" }
+    ],
+    "notes": [
+      "Las clases del jueves de la semana 2 (01/10/2026) se impartirán el viernes de la semana 1 (25/09/2026).",
+      "Las clases del lunes de la semana 4 (12/10/2026) se impartirán el viernes de la semana 4 (16/10/2026).",
+      "Las clases del lunes de la semana 7 (02/11/2026) se impartirán el viernes de la semana 7 (06/11/2026).",
+      "Las clases del miércoles de la semana 15 (06/01/2027) se impartirán el viernes de la semana 15 (08/01/2027)."
+    ]
+  }
 }
