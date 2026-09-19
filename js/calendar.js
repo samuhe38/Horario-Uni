@@ -99,20 +99,26 @@ function buildTimeColumn() {
 
 /** HTML interno de una caja de clase: hora + aula, siglas, grupos y semanas. */
 function buildSessionBoxContent(session, subject) {
-  // Hora a la izquierda y aula a la derecha, en esquinas opuestas.
+  // Hora a la izquierda y aula a la derecha, en esquinas opuestas: esto es
+  // la "cabecera" de la caja y se queda fija arriba.
   let inner = `<div class="sb-head">
       <span class="sb-time">${session.start} a ${session.end}</span>
       <span class="sb-room">${escapeHtml(session.room || "")}</span>
     </div>
     <div class="sb-siglas" style="color:${subject.color}">${escapeHtml(subject.siglas)}</div>`;
 
+  // El grupo y sus semanas activas se meten en un bloque aparte que se
+  // centra en el espacio que le sobra a la caja, en vez de quedarse pegado
+  // justo debajo de la cabecera cuando la sesión es larga y sobra alto.
+  let groupsInner = "";
   session.grupos.forEach((g) => {
-    inner += `<div class="sb-grupo">${escapeHtml(g.code)} - ${escapeHtml(g.tipo)}</div>`;
-    inner +=
+    groupsInner += `<div class="sb-grupo">${escapeHtml(g.code)} - ${escapeHtml(g.tipo)}</div>`;
+    groupsInner +=
       `<div class="sb-weeks">` +
       g.weeksActive.map((active, i) => `<span class="${active ? "" : "off"}">${i + 1}</span>`).join("") +
       `</div>`;
   });
+  inner += `<div class="sb-groups">${groupsInner}</div>`;
 
   return inner;
 }
