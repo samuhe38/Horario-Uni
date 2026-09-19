@@ -12,6 +12,7 @@ import * as sessionForm from "./sessionForm.js";
 import * as calendar from "./calendar.js";
 import { initModal } from "./modal.js";
 import * as importExport from "./importExport.js";
+import * as miniCalendar from "./miniCalendar.js";
 
 const META_FIELDS = {
   metaTitulo: "titulo",
@@ -27,6 +28,7 @@ function fullRender() {
   sessionForm.renderSessionList(handleEditSession, handleDeleteSession);
   calendar.renderCalendar();
   calendar.renderLegend();
+  miniCalendar.renderMiniCalendar();
   saveState();
 }
 
@@ -60,9 +62,73 @@ function refreshMetaInputs() {
   });
 }
 
+/** "2026-12-28,2027-01-03\n..." -> [{start,end}, ...] */
+function parseBreaksText(raw) {
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [start, end] = line.split(",").map((s) => (s || "").trim());
+      return { start, end };
+    })
+    .filter((b) => b.start && b.end);
+}
+
+/** [{start,end}, ...] -> "2026-12-28,2027-01-03\n..." */
+function breaksToText(breaks) {
+  return (breaks || []).map((b) => `${b.start},${b.end}`).join("\n");
+}
+
+function parseNotesText(raw) {
+  return raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+/** Sincroniza los campos del mini calendario con `state.miniCalendar`. */
+function bindMiniCalendarInputs() {
+  const cfg = state.miniCalendar;
+  const elEnabled = document.getElementById("mcEnabled");
+  const elStart = document.getElementById("mcStartDate");
+  const elWeeks = document.getElementById("mcWeeksCount");
+  const elBreaks = document.getElementById("mcBreaks");
+  const elNotes = document.getElementById("mcNotes");
+
+  refreshMiniCalendarInputs();
+
+  const onChange = () => {
+    cfg.enabled = elEnabled.value === "1";
+    cfg.startDate = elStart.value;
+    cfg.weeksCount = parseInt(elWeeks.value) || 16;
+    cfg.breaks = parseBreaksText(elBreaks.value);
+    cfg.notes = parseNotesText(elNotes.value);
+    saveState();
+    miniCalendar.renderMiniCalendar();
+  };
+
+  elEnabled.addEventListener("change", onChange);
+  elStart.addEventListener("input", onChange);
+  elWeeks.addEventListener("input", onChange);
+  elBreaks.addEventListener("input", onChange);
+  elNotes.addEventListener("input", onChange);
+}
+
+/** Solo refresca los valores mostrados (tras cargar o importar), sin duplicar listeners. */
+function refreshMiniCalendarInputs() {
+  const cfg = state.miniCalendar;
+  document.getElementById("mcEnabled").value = cfg.enabled ? "1" : "0";
+  document.getElementById("mcStartDate").value = cfg.startDate || "";
+  document.getElementById("mcWeeksCount").value = cfg.weeksCount || 16;
+  document.getElementById("mcBreaks").value = breaksToText(cfg.breaks);
+  document.getElementById("mcNotes").value = (cfg.notes || []).join("\n");
+}
+
 function onImportSuccess() {
   sessionForm.resetForm();
   refreshMetaInputs();
+  refreshMiniCalendarInputs();
   fullRender();
   alert("Horario importado correctamente.");
 }
