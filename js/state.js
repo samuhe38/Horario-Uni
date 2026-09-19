@@ -22,4 +22,14 @@ export const state = {
   subjects: [],
   // { id, subjectId, day, start, end, room, grupos:[{id,code,tipo,weeksTotal,weeksActive:[bool]}] }
   sessions: [],
+  // Mini-calendario del cuatrimestre (como el de la esquina del horario oficial).
+  // Es independiente de las sesiones: solo marca qué semana del curso es cada fecha.
+  miniCalendar: {
+    enabled: false,
+    startDate: "", // fecha ISO (YYYY-MM-DD) del lunes de la semana 1
+    weeksCount: 16,
+    breaks: [], // [{start:'YYYY-MM-DD', end:'YYYY-MM-DD'}, ...] periodos sin numerar (vacaciones)
+    notes: [], // notas de reprogramación, una por línea
+  },
 };
+
