@@ -6,6 +6,15 @@
  * columna contiene DENTRO su propia cabecera y su propio cuerpo, de forma que
  * las cabeceras y los días nunca pueden desalinearse.
  *
+ * Reparto del ancho: en vez de usar flex-grow combinado con min-width
+ * distintos por columna (que el navegador puede repartir de forma poco
+ * intuitiva cuando unas columnas topan con su mínimo y otras no — por
+ * ejemplo, dejando una columna vacía mucho más ancha de lo que debería),
+ * cada columna recibe un ancho explícito en porcentaje calculado aquí mismo:
+ * un día con el doble de clases simultáneas que otro mide el doble, sin
+ * ambigüedad, y con un mínimo en píxeles para que el texto siga siendo
+ * legible (si no cabe, el conjunto se desplaza con scroll horizontal).
+ *
  * NOTA IMPORTANTE SOBRE LOS ESTILOS
  * Los estilos que sostienen la ESTRUCTURA (display:flex del contenedor,
  * position:relative de los cuerpos, altura de las cabeceras...) se aplican
@@ -87,8 +96,9 @@ function buildTimeColumn() {
     lbl.className = "cal-timelabel" + (slot.onHour ? " on-hour" : "");
     lbl.style.position = "absolute";
     lbl.style.right = "8px";
-    lbl.style.top = slot.top + "px";
-    lbl.style.transform = "translateY(-50%)";
+    // La etiqueta se coloca justo DEBAJO de su línea (no centrada encima),
+    // para que la línea no atraviese el texto por la mitad.
+    lbl.style.top = slot.top + 2 + "px";
     lbl.textContent = slot.label;
     body.appendChild(lbl);
   });
@@ -123,9 +133,14 @@ function buildSessionBoxContent(session, subject) {
   return inner;
 }
 
-/** Caja de una clase, ya posicionada en su hora exacta. */
-function buildSessionBox(session, subject, totalCols) {
-  const geo = sessionGeometry(session, totalCols);
+/**
+ * Caja de una clase, ya posicionada en su hora exacta.
+ * `clusterCols` es el nº de columnas de SU PROPIO cluster (no el máximo del
+ * día entero): así una clase que no solapa con nada ocupa el 100% del
+ * ancho del día aunque ese mismo día tenga un solape en otra franja horaria.
+ */
+function buildSessionBox(session, subject, clusterCols) {
+  const geo = sessionGeometry(session, clusterCols);
 
   const box = document.createElement("div");
   box.className = "session-box";
@@ -144,22 +159,20 @@ function buildSessionBox(session, subject, totalCols) {
   return box;
 }
 
-/** Columna completa de un día, con sus clases colocadas. */
-function buildDayColumn(dayIndex) {
-  const daySessions = state.sessions.filter((s) => s.day === dayIndex);
-  const clusters = layoutDay(daySessions);
-  const cols = maxConcurrency(clusters);
-
+/**
+ * Columna completa de un día ya con su ancho decidido (`widthPct`, en % del
+ * ancho total disponible para los 5 días) y sus clases colocadas, cada una
+ * dividida según el nº de columnas de SU cluster, no del día completo.
+ */
+function buildDayColumn(dayIndex, clusters, widthPct, minWidthPx) {
   const col = document.createElement("div");
   col.className = "cal-col cal-daycol";
-  // Estructura crítica: el día se ensancha en proporción a sus clases
-  // simultáneas, en vez de encoger las cajas.
+  // Estructura crítica: ancho explícito y fijo (nada de flex-grow ambiguo).
   col.style.display = "flex";
   col.style.flexDirection = "column";
-  col.style.flexGrow = String(cols);
-  col.style.flexShrink = "0";
-  col.style.flexBasis = "0";
-  col.style.minWidth = cols * MIN_COL_WIDTH + "px";
+  col.style.flex = "0 0 auto";
+  col.style.width = widthPct + "%";
+  col.style.minWidth = minWidthPx + "px";
 
   col.appendChild(buildColumnHead(DAY_NAMES[dayIndex]));
   const body = buildColumnBody();
@@ -168,7 +181,7 @@ function buildDayColumn(dayIndex) {
     cluster.forEach((s) => {
       const subj = state.subjects.find((x) => x.id === s.subjectId);
       if (!subj) return;
-      body.appendChild(buildSessionBox(s, subj, cols));
+      body.appendChild(buildSessionBox(s, subj, cluster._numCols));
     });
   });
 
@@ -188,10 +201,23 @@ export function renderCalendar() {
   grid.style.flexDirection = "row";
   grid.style.alignItems = "flex-start";
 
-  grid.appendChild(buildTimeColumn());
+  // 1º pasada: cuántas "unidades" de ancho necesita cada día (1 por cada
+  // clase simultánea como máximo). Un día vacío o sin solapes vale 1 unidad,
+  // igual que cualquier otro día sin solapes — nunca más ancho que ellos.
+  const perDay = [];
   for (let day = 0; day < 5; day++) {
-    grid.appendChild(buildDayColumn(day));
+    const daySessions = state.sessions.filter((s) => s.day === day);
+    const clusters = layoutDay(daySessions);
+    perDay.push({ day, clusters, units: maxConcurrency(clusters) });
   }
+  const totalUnits = perDay.reduce((sum, d) => sum + d.units, 0) || 5;
+
+  grid.appendChild(buildTimeColumn());
+  perDay.forEach(({ day, clusters, units }) => {
+    const widthPct = (units / totalUnits) * 100;
+    const minWidthPx = units * MIN_COL_WIDTH;
+    grid.appendChild(buildDayColumn(day, clusters, widthPct, minWidthPx));
+  });
 
   document.getElementById("emptyNote").style.display = state.sessions.length ? "none" : "block";
 }
