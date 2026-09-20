@@ -69,8 +69,8 @@ export function importFromObject(obj) {
 
   // El mini calendario es opcional: si el JSON no trae "miniCalendar", no se
   // activa nada solo (sigue como estaba, apagado por defecto). Si lo trae,
-  // se puede rellenar entero (fecha de inicio, semanas, vacaciones y notas)
-  // sin tocar el formulario a mano.
+  // se puede rellenar entero (fecha de inicio, semanas, vacaciones, festivos
+  // sueltos y notas) sin tocar el formulario a mano.
   if (obj.miniCalendar && typeof obj.miniCalendar === "object") {
     const mc = obj.miniCalendar;
     state.miniCalendar = {
@@ -80,6 +80,7 @@ export function importFromObject(obj) {
       breaks: Array.isArray(mc.breaks)
         ? mc.breaks.filter((b) => b && b.start && b.end).map((b) => ({ start: b.start, end: b.end }))
         : [],
+      holidays: Array.isArray(mc.holidays) ? mc.holidays.filter((h) => typeof h === "string") : [],
       notes: Array.isArray(mc.notes) ? mc.notes.filter((n) => typeof n === "string") : [],
     };
   }
