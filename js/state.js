@@ -28,7 +28,8 @@ export const state = {
     enabled: false,
     startDate: "", // fecha ISO (YYYY-MM-DD) del lunes de la semana 1
     weeksCount: 16,
-    breaks: [], // [{start:'YYYY-MM-DD', end:'YYYY-MM-DD'}, ...] periodos sin numerar (vacaciones)
+    breaks: [], // [{start:'YYYY-MM-DD', end:'YYYY-MM-DD'}, ...] periodos sin numerar (vacaciones) — se pintan en rojo
+    holidays: [], // ["YYYY-MM-DD", ...] festivos/puentes sueltos — se pintan en rojo
     notes: [], // notas de reprogramación, una por línea
   },
 };
