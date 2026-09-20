@@ -193,6 +193,9 @@
     "breaks": [
       { "start": "2026-12-28", "end": "2027-01-03" }
     ],
+    "holidays": [
+      "2026-10-12"
+    ],
     "notes": [
       "Las clases del jueves de la semana 2 se impartirán el viernes de la semana 1."
     ]
@@ -202,8 +205,10 @@
         El bloque <code>miniCalendar</code> es opcional: si no lo incluyes, el mini calendario simplemente
         no se activa (sigue apagado por defecto, tal y como esté configurado ahora mismo en la herramienta).
         Si lo incluyes, rellena tú mismo <code>startDate</code> (el lunes de la semana 1), <code>weeksCount</code>
-        (semanas lectivas) y, si hay periodos sin clase (Navidad, Semana Santa...), añádelos en
-        <code>breaks</code>: esas semanas no se numeran, igual que en el horario oficial.
+        (semanas lectivas), <code>breaks</code> para periodos de vacaciones (Navidad, Semana Santa...) —esas
+        semanas no se numeran, igual que en el horario oficial— y <code>holidays</code> para festivos o
+        puentes sueltos. Tanto los días de <code>breaks</code> como los de <code>holidays</code> se pintan en
+        rojo, igual que los fines de semana (esos se calculan solos, no hace falta indicarlos).
       </p>
       <label for="importText" style="margin-top:10px;">Pega aquí el JSON</label>
       <textarea id="importText" placeholder="Pega aquí el bloque JSON..."></textarea>
@@ -226,9 +231,10 @@
     <h2>Mini calendario del cuatrimestre</h2>
     <p class="hint">
       El bloque de meses con las semanas numeradas que aparece en la esquina del horario oficial. Es
-      independiente de las sesiones: solo marca qué semana del curso es cada fecha. Si el cuatrimestre
-      tiene un periodo sin clase (por ejemplo Navidad), añádelo abajo: esas semanas no se numeran, igual
-      que en el documento oficial.
+      independiente de las sesiones: solo marca qué semana del curso es cada fecha. Los días sin clase se
+      pintan en rojo: los fines de semana se calculan solos; los festivos, puentes y periodos de vacaciones
+      los añades tú abajo. Un periodo de vacaciones (Navidad, Semana Santa...) además hace que esas semanas
+      no se numeren, igual que en el documento oficial.
     </p>
     <div class="grid-form">
       <div class="field">
@@ -247,8 +253,10 @@
         <input type="number" id="mcWeeksCount" min="1" max="20" value="16">
       </div>
     </div>
-    <label style="margin-top:12px;">Periodos sin clase (uno por línea, formato AAAA-MM-DD,AAAA-MM-DD)</label>
+    <label style="margin-top:12px;">Periodos de vacaciones (uno por línea, formato AAAA-MM-DD,AAAA-MM-DD) — en rojo y sin numerar</label>
     <textarea id="mcBreaks" placeholder="Ej: 2026-12-28,2027-01-03" style="min-height:60px;"></textarea>
+    <label style="margin-top:12px;">Festivos y puentes sueltos (una fecha por línea, AAAA-MM-DD) — en rojo</label>
+    <textarea id="mcHolidays" placeholder="Ej: 2026-10-12" style="min-height:60px;"></textarea>
     <label style="margin-top:12px;">Notas de reprogramación (una por línea, opcional)</label>
     <textarea id="mcNotes" placeholder="Ej: Las clases del jueves de la semana 2 se impartirán el viernes de la semana 1." style="min-height:60px;"></textarea>
   </div>
