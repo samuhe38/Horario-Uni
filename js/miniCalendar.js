@@ -6,9 +6,15 @@
  * original) y, a la izquierda de cada fila que contiene un lunes dentro del
  * cuatrimestre, el número de "semana" correspondiente (semana 1, 2, 3...).
  *
+ * Los días sin clase se pintan en rojo:
+ *  - Fines de semana: se calculan solos, no hace falta indicarlos.
+ *  - Festivos y puentes: fechas sueltas que se añaden a mano.
+ *  - Vacaciones: los mismos rangos `breaks` que ya se usan para no numerar
+ *    esas semanas (Navidad, Semana Santa...), ahora también pintan en rojo
+ *    cada día del rango.
+ *
  * Es independiente de las sesiones del horario: es información del
- * calendario académico en sí (qué semana del curso es cada fecha), igual
- * que en el documento oficial. Debajo se pueden añadir notas de
+ * calendario académico en sí. Debajo se pueden añadir notas de
  * reprogramación de clases, en texto libre.
  */
 
@@ -41,21 +47,25 @@ function toKey(date) {
 }
 
 /**
- * Calcula los meses que hay que dibujar para un cuatrimestre y qué número de
- * semana corresponde a cada lunes de ese rango.
+ * Calcula los meses que hay que dibujar para un cuatrimestre, qué número de
+ * semana corresponde a cada lunes, y qué días concretos no tienen clase
+ * (fines de semana, festivos/puentes sueltos, o dentro de un periodo de
+ * vacaciones) para poder pintarlos en rojo.
  *
  * Los cuatrimestres reales no numeran las semanas de vacaciones (por
  * ejemplo, en Navidad la semana 15 no empieza justo 14 semanas después de la
  * semana 1: hay un hueco sin numerar de por medio). Por eso se puede pasar
  * `breaks`, un array de rangos {start, end} (fechas ISO) que se saltan al
- * contar semanas — esas semanas no reciben número, igual que en el original.
+ * contar semanas — esas semanas no reciben número, igual que en el original,
+ * y además cada uno de sus días se marca como sin clase.
  *
  * @param {string} startDateStr fecha ISO (YYYY-MM-DD) del lunes de la semana 1
  * @param {number} weeksCount número de semanas lectivas del cuatrimestre
  * @param {{start:string, end:string}[]} [breaks] rangos de fechas a excluir (vacaciones)
- * @returns {{year:number, month:number, monthName:string, rows:{weekNumber:number|null, days:(number|null)[]}[]}[]}
+ * @param {string[]} [holidays] fechas ISO sueltas sin clase (festivos, puentes)
+ * @returns {{year:number, month:number, monthName:string, rows:{weekNumber:number|null, days:({day:number, nonClass:boolean}|null)[]}[]}[]}
  */
-export function buildMonthGrids(startDateStr, weeksCount, breaks = []) {
+export function buildMonthGrids(startDateStr, weeksCount, breaks = [], holidays = []) {
   if (!startDateStr || !weeksCount) return [];
   const start = new Date(startDateStr + "T00:00:00");
   if (isNaN(start.getTime())) return [];
@@ -64,6 +74,17 @@ export function buildMonthGrids(startDateStr, weeksCount, breaks = []) {
     .filter((b) => b && b.start && b.end)
     .map((b) => ({ start: new Date(b.start + "T00:00:00"), end: new Date(b.end + "T00:00:00") }));
   const isInBreak = (date) => breakRanges.some((r) => date >= r.start && date <= r.end);
+
+  const holidaySet = new Set((holidays || []).filter(Boolean));
+
+  /** Fin de semana, festivo/puente suelto, o dentro de un periodo de vacaciones. */
+  const isNonClassDate = (date) => {
+    const dow = date.getDay(); // 0 = domingo, 6 = sábado
+    if (dow === 0 || dow === 6) return true;
+    if (holidaySet.has(toKey(date))) return true;
+    if (isInBreak(date)) return true;
+    return false;
+  };
 
   // Recorremos semana a semana desde el lunes de inicio, saltando las que
   // caen dentro de un descanso, hasta completar weeksCount semanas lectivas.
@@ -108,7 +129,10 @@ export function buildMonthGrids(startDateStr, weeksCount, breaks = []) {
       const weekCells = cells.slice(i, i + 7);
       const rowMonday = addDays(gridStartMonday, i); // i ya avanza de 7 en 7
       const weekNumber = weekOf.get(toKey(rowMonday)) || null;
-      rows.push({ weekNumber, days: weekCells });
+      const days = weekCells.map((d) =>
+        d ? { day: d, nonClass: isNonClassDate(new Date(year, month, d)) } : null
+      );
+      rows.push({ weekNumber, days });
     }
 
     grids.push({ year, month, monthName: MONTH_NAMES[month], rows });
@@ -129,9 +153,9 @@ export function renderMiniCalendar() {
     box.style.display = "none";
     return;
   }
-  box.style.display = "block";
+  box.style.display = "flex";
 
-  const grids = buildMonthGrids(cfg.startDate, cfg.weeksCount, cfg.breaks || []);
+  const grids = buildMonthGrids(cfg.startDate, cfg.weeksCount, cfg.breaks || [], cfg.holidays || []);
 
   const monthsHtml = grids
     .map((g) => {
@@ -140,7 +164,11 @@ export function renderMiniCalendar() {
           (row) => `<div class="mc-row">
             <span class="mc-weeknum">${row.weekNumber ?? ""}</span>
             ${row.days
-              .map((d) => `<span class="mc-day${d ? "" : " mc-blank"}">${d ?? ""}</span>`)
+              .map((cell) =>
+                cell
+                  ? `<span class="mc-day${cell.nonClass ? " mc-nonclass" : ""}">${cell.day}</span>`
+                  : `<span class="mc-day mc-blank"></span>`
+              )
               .join("")}
           </div>`
         )
@@ -157,6 +185,8 @@ export function renderMiniCalendar() {
     .map((n) => `<div class="mc-note">${escapeHtml(n)}</div>`)
     .join("");
 
+  // Las notas van primero (más cerca de la leyenda de asignaturas) y los
+  // meses después, a la derecha del todo — igual que en el horario oficial.
   box.innerHTML =
-    `<div class="mc-months">${monthsHtml}</div>` + (notesHtml ? `<div class="mc-notes">${notesHtml}</div>` : "");
+    (notesHtml ? `<div class="mc-notes">${notesHtml}</div>` : "") + `<div class="mc-months">${monthsHtml}</div>`;
 }
