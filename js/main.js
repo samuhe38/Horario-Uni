@@ -80,6 +80,7 @@ function breaksToText(breaks) {
   return (breaks || []).map((b) => `${b.start},${b.end}`).join("\n");
 }
 
+/** "2026-10-12\n2026-12-08\n..." -> ["2026-10-12","2026-12-08",...] (líneas vacías fuera) */
 function parseNotesText(raw) {
   return raw
     .split("\n")
@@ -94,6 +95,7 @@ function bindMiniCalendarInputs() {
   const elStart = document.getElementById("mcStartDate");
   const elWeeks = document.getElementById("mcWeeksCount");
   const elBreaks = document.getElementById("mcBreaks");
+  const elHolidays = document.getElementById("mcHolidays");
   const elNotes = document.getElementById("mcNotes");
 
   refreshMiniCalendarInputs();
@@ -103,6 +105,7 @@ function bindMiniCalendarInputs() {
     cfg.startDate = elStart.value;
     cfg.weeksCount = parseInt(elWeeks.value) || 16;
     cfg.breaks = parseBreaksText(elBreaks.value);
+    cfg.holidays = parseNotesText(elHolidays.value); // mismo formato: una fecha por línea
     cfg.notes = parseNotesText(elNotes.value);
     saveState();
     miniCalendar.renderMiniCalendar();
@@ -112,6 +115,7 @@ function bindMiniCalendarInputs() {
   elStart.addEventListener("input", onChange);
   elWeeks.addEventListener("input", onChange);
   elBreaks.addEventListener("input", onChange);
+  elHolidays.addEventListener("input", onChange);
   elNotes.addEventListener("input", onChange);
 }
 
@@ -122,6 +126,7 @@ function refreshMiniCalendarInputs() {
   document.getElementById("mcStartDate").value = cfg.startDate || "";
   document.getElementById("mcWeeksCount").value = cfg.weeksCount || 16;
   document.getElementById("mcBreaks").value = breaksToText(cfg.breaks);
+  document.getElementById("mcHolidays").value = (cfg.holidays || []).join("\n");
   document.getElementById("mcNotes").value = (cfg.notes || []).join("\n");
 }
 
