@@ -41,7 +41,8 @@
   color: var(--teal-dark);
   padding: 2px 0;
   background: transparent;
-  min-width: 280px;
+  width: 440px;
+  max-width: 100%;
 }
 .meta-box {
   border: 1px solid var(--teal);
@@ -250,10 +251,17 @@
 /* ---------- Mini-calendario del cuatrimestre ---------- */
 /* Igual que el bloque de meses de la esquina del horario oficial: uno por
    mes, filas de lunes a domingo sin cabecera de día, y el número de semana
-   del curso a la izquierda de cada fila que empieza dentro del cuatrimestre. */
+   del curso a la izquierda de cada fila que empieza dentro del cuatrimestre.
+   Las notas van primero (más cerca de la leyenda) y los meses después, con
+   espacio entre ambos bloques — así las notas quedan "entre medio" de los
+   códigos de asignaturas y el calendario, como se pidió. */
 .mini-calendar {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
   flex: 0 1 auto;
   margin-left: auto;
+  flex-wrap: wrap;
 }
 .mc-months {
   display: flex;
@@ -291,11 +299,17 @@
 .mc-day.mc-blank {
   visibility: hidden;
 }
+/* Día sin clase: fin de semana (automático), festivo/puente suelto o dentro
+   de un periodo de vacaciones (ambos añadidos a mano). */
+.mc-day.mc-nonclass {
+  color: var(--danger);
+  font-weight: 700;
+}
 .mc-notes {
-  margin-top: 10px;
   font-size: 10px;
   color: var(--muted);
   line-height: 1.5;
+  max-width: 230px;
 }
 .mc-note {
   margin-bottom: 2px;
