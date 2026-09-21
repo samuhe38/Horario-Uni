@@ -31,6 +31,11 @@
     "breaks": [
       { "start": "2026-12-28", "end": "2027-01-03" }
     ],
+    "holidays": [
+      "2026-10-12",
+      "2026-11-02",
+      "2026-12-08"
+    ],
     "notes": [
       "Las clases del jueves de la semana 2 (01/10/2026) se impartirán el viernes de la semana 1 (25/09/2026).",
       "Las clases del lunes de la semana 4 (12/10/2026) se impartirán el viernes de la semana 4 (16/10/2026).",
