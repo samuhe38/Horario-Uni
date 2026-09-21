@@ -114,13 +114,13 @@ function buildSessionBoxContent(session, subject) {
   let inner = `<div class="sb-head">
       <span class="sb-time">${session.start} a ${session.end}</span>
       <span class="sb-room">${escapeHtml(session.room || "")}</span>
-    </div>
-    <div class="sb-siglas" style="color:${subject.color}">${escapeHtml(subject.siglas)}</div>`;
+    </div>`;
 
-  // El grupo y sus semanas activas se meten en un bloque aparte que se
-  // centra en el espacio que le sobra a la caja, en vez de quedarse pegado
-  // justo debajo de la cabecera cuando la sesión es larga y sobra alto.
-  let groupsInner = "";
+  // Las siglas, el grupo y sus semanas activas van juntos en un bloque que
+  // se centra en el espacio que le sobra a la caja (entre la cabecera de
+  // arriba y el final de la caja), en vez de quedarse la sigla pegada justo
+  // debajo de la cabecera y solo el grupo/semanas centrado aparte.
+  let groupsInner = `<div class="sb-siglas" style="color:${subject.color}">${escapeHtml(subject.siglas)}</div>`;
   session.grupos.forEach((g) => {
     groupsInner += `<div class="sb-grupo">${escapeHtml(g.code)} - ${escapeHtml(g.tipo)}</div>`;
     groupsInner +=
