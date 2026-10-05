@@ -193,7 +193,7 @@ export async function downloadPNG() {
       shell.style.paddingRight = prevShellPaddingRight;
     }
     scrollBox.style.overflow = prevScrollOverflow;
-    scrollBox.style.width = prevTargetWidth;
+    scrollBox.style.width = prevScrollWidth;
     target.style.width = prevTargetWidth;
     btn.disabled = false;
     btn.textContent = original;
