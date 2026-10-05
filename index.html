@@ -8,8 +8,8 @@
 <!-- El ?v=2 fuerza al navegador a descargar estos archivos de nuevo en lugar
      de reutilizar una versión antigua guardada en la caché. Si algún día
      vuelves a cambiar el CSS o el JS y no ves los cambios, sube el número. -->
-<link rel="stylesheet" href="css/base.css?v=2">
-<link rel="stylesheet" href="css/calendar.css?v=2">
+<link rel="stylesheet" href="css/base.css?v=3">
+<link rel="stylesheet" href="css/calendar.css?v=3">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -288,6 +288,7 @@
 
     <div class="bottom-row">
       <div class="legend" id="legendBox"></div>
+      <div class="calendar-notes" id="calendarNotesBox" style="display:none;"></div>
       <div id="miniCalendarBox" class="mini-calendar" style="display:none;"></div>
     </div>
   </div>
@@ -305,6 +306,6 @@
   </div>
 </div>
 
-<script type="module" src="js/main.js?v=2"></script>
+<script type="module" src="js/main.js?v=3"></script>
 </body>
 </html>
