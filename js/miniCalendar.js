@@ -151,6 +151,11 @@ export function renderMiniCalendar() {
   if (!cfg || !cfg.enabled || !cfg.startDate || !cfg.weeksCount) {
     box.innerHTML = "";
     box.style.display = "none";
+    const notesBox = document.getElementById("calendarNotesBox");
+    if (notesBox) {
+      notesBox.innerHTML = "";
+      notesBox.style.display = "none";
+    }
     return;
   }
   box.style.display = "flex";
@@ -180,13 +185,17 @@ export function renderMiniCalendar() {
     })
     .join("");
 
-  const notesHtml = (cfg.notes || [])
-    .filter((n) => n.trim())
-    .map((n) => `<div class="mc-note">${escapeHtml(n)}</div>`)
-    .join("");
-
-  // Las notas van primero (más cerca de la leyenda de asignaturas) y los
-  // meses después, a la derecha del todo — igual que en el horario oficial.
-  box.innerHTML =
-    (notesHtml ? `<div class="mc-notes">${notesHtml}</div>` : "") + `<div class="mc-months">${monthsHtml}</div>`;
+  // Las aclaraciones se renderizan en un bloque independiente, situado
+  // entre la leyenda y el mini-calendario. Así nunca quedan dentro de la
+  // misma caja/flujo visual que los meses.
+  const notesBox = document.getElementById("calendarNotesBox");
+  const notes = (cfg.notes || []).filter((n) => n.trim());
+  if (notesBox) {
+    notesBox.innerHTML = notes.length
+      ? `<div class="calendar-notes-title">Aclaraciones</div>` +
+        notes.map((n) => `<div class="calendar-note">${escapeHtml(n)}</div>`).join("")
+      : "";
+    notesBox.style.display = notes.length ? "block" : "none";
+  }
+  box.innerHTML = `<div class="mc-months">${monthsHtml}</div>`;
 }
