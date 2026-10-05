@@ -141,8 +141,11 @@ export async function downloadPNG() {
 
   // Guardamos los estilos que vamos a tocar para restaurarlos después.
   const prevShellMaxWidth = shell ? shell.style.maxWidth : null;
+  const prevShellPaddingLeft = shell ? shell.style.paddingLeft : null;
+  const prevShellPaddingRight = shell ? shell.style.paddingRight : null;
   const prevScrollOverflow = scrollBox.style.overflow;
   const prevScrollWidth = scrollBox.style.width;
+  const prevTargetWidth = target.style.width;
 
   // El contenedor ".shell" tiene un max-width para verse bien en pantalla,
   // y ".cal-scroll" recorta con scroll horizontal cuando el horario es más
@@ -150,17 +153,24 @@ export async function downloadPNG() {
   // de hacer la foto quitamos ambas limitaciones para que TODO el horario se
   // despliegue a su ancho real; si no, html2canvas solo capturaba la parte
   // que cabía en pantalla y el resto se quedaba cortado en la imagen.
-  if (shell) shell.style.maxWidth = "none";
+  if (shell) {
+    shell.style.maxWidth = "none";
+    shell.style.paddingLeft = "0";
+    shell.style.paddingRight = "0";
+  }
   scrollBox.style.overflow = "visible";
   scrollBox.style.width = "max-content";
+  target.style.width = "max-content";
 
   try {
     // Con las limitaciones ya quitadas, medimos el tamaño real desplegado.
     const fullWidth = target.scrollWidth;
     const fullHeight = target.scrollHeight;
+    // Evita PNG desproporcionadamente grandes en horarios con solapes.
+    const exportScale = Math.min(2, 2400 / Math.max(fullWidth, 1));
 
     const canvas = await html2canvas(target, {
-      scale: 2,
+      scale: Math.max(1, exportScale),
       backgroundColor: "#ffffff",
       useCORS: true,
       width: fullWidth,
@@ -177,9 +187,14 @@ export async function downloadPNG() {
   } catch (err) {
     alert("No se pudo generar la imagen: " + err.message);
   } finally {
-    if (shell) shell.style.maxWidth = prevShellMaxWidth;
+    if (shell) {
+      shell.style.maxWidth = prevShellMaxWidth;
+      shell.style.paddingLeft = prevShellPaddingLeft;
+      shell.style.paddingRight = prevShellPaddingRight;
+    }
     scrollBox.style.overflow = prevScrollOverflow;
-    scrollBox.style.width = prevScrollWidth;
+    scrollBox.style.width = prevTargetWidth;
+    target.style.width = prevTargetWidth;
     btn.disabled = false;
     btn.textContent = original;
   }
